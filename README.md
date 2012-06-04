@@ -5,26 +5,29 @@ De novo metagenomic assembler
 
 
 Installation
-====
+------------
 
 1. Clone Kiki repo
-git https://github.com/GeneAssembly/kiki.git
-(or git git://github.com/GeneAssembly/kiki.git for read-only access)
+
+    git clone https://github.com/GeneAssembly/kiki.git 
+
+    (or git clone git://github.com/GeneAssembly/kiki.git for read-only access)
 
 2. Make sure CMake is installed
 
 3. Build and test
-cd kiki
-mkdir bin
-cd bin
-cmake ..
-make ki
-./ki -i ../test/short.fa -o test
+
+    cd kiki  <br />
+    mkdir bin
+    cd bin
+    cmake ..
+    make ki
+    ./ki -i ../test/short.fa -o test
 
 Usage
-====
+-----
 
-Usage: ki (-i single.file | -I file.list) [options] 
+    Usage: ki (-i single.file | -I file.list) [options] 
          -k int        kmer length, also used as minimum overlap (D = 25) 
          -o outname    output prefix 
          -u float|int  fraction of nodes used as users or the number of user nodes 
@@ -35,7 +38,7 @@ Usage: ki (-i single.file | -I file.list) [options]
 
 
 License
-====
+-------
 
 Copyright (c) 2011-2012, University of Chicago All rights reserved.
 
