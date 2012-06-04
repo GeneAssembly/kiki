@@ -17,11 +17,11 @@ Installation
 
 3. Build and test
 
-    cd kiki
-    mkdir bin
-    cd bin
-    cmake ..
-    make ki
+    cd kiki<br/>
+    mkdir bin<br/>
+    cd bin<br/>
+    cmake ..<br/>
+    make ki<br/>
     ./ki -i ../test/short.fa -o test
 
 Usage
