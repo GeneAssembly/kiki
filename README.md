@@ -11,13 +11,13 @@ Installation
 
     git clone https://github.com/GeneAssembly/kiki.git 
 
-    (or git clone git://github.com/GeneAssembly/kiki.git for read-only access)
+    (or 'git clone git://github.com/GeneAssembly/kiki.git' for read-only access)
 
 2. Make sure CMake is installed
 
 3. Build and test
 
-    cd kiki  <br />
+    cd kiki
     mkdir bin
     cd bin
     cmake ..
