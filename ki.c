@@ -453,10 +453,10 @@ int kiFarmerDummyAssemble() {
 }
 
 /* Get seed sequence to extend on */
-void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* status) {
+void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* seedStatus) {
   KI_PACK_SEND_CMD_BARE(KI_CMD_GET_SEED_SEQ);
   KI_RECV_UNPACK_CMD(KI_STRING, seed,
-                     KI_INT, status);
+                     KI_INT, seedStatus);
 }
 
 int kiFarmerGetSeedSeq() {
@@ -500,7 +500,6 @@ int kiFarmerGetSeedSeq() {
   KI_Bcast_string(seed, cpu, ki_cmm_domain);
   KI_FARMER_PACK(KI_STRING, seed,
                  KI_INT, &status);
-
 }
 
 /* Get overlapping sequences */

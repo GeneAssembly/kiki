@@ -420,7 +420,7 @@ void hybridAssemble(int argc, char *argv[]) {
       break;
     }
     
-    kiUserGetSeedSeq(seed, seedStatus);
+    kiUserGetSeedSeq(seed, &seedStatus);
   }
 
   kiFreeAlignment(matches);
