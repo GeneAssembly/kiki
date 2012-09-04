@@ -91,6 +91,9 @@ long long ki_clock_total   = 0;
 int ki_kmer_len         = KI_DEF_KMER_LEN;
 int ki_hash_mode        = KI_DEF_HASH_MODE;
 
+int ki_exeution_time     = 0;
+float ki_read_depletion  = -1.0;
+
 /* Implementation-specific */
 alignment_t*  ki_seqs   = NULL;
 hashtable_t** ki_hash   = NULL;
@@ -122,6 +125,7 @@ void kiRegisterCommands() {
   kiRegisterCommand(KI_CMD_RAIPHY_ORIGINAL,      kiFarmerRAIphyOriginal);
   kiRegisterCommand(KI_CMD_STORE_STATE,          kiFarmerStoreState);
   kiRegisterCommand(KI_CMD_RESTORE_STATE,        kiFarmerRestoreState);
+  kiRegisterCommand(KI_CMD_SET_TERMINATION,      kiFarmerSetTermination);
 }
 
 /* Demo function: packing and unpacking args */
@@ -453,16 +457,16 @@ int kiFarmerDummyAssemble() {
 }
 
 /* Get seed sequence to extend on */
-void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* seedStatus) {
+void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* termStatus) {
   KI_PACK_SEND_CMD_BARE(KI_CMD_GET_SEED_SEQ);
   KI_RECV_UNPACK_CMD(KI_STRING, seed,
-                     KI_INT, seedStatus);
+                     KI_INT, termStatus);
 }
 
 int kiFarmerGetSeedSeq() {
   char seed[KI_SEQ_BUF_SIZE] = "";
-  int status = 0;
-  
+  int termStatus = KI_TERMINATION_NONE;
+
   struct {
     int value;
     int index;
@@ -474,6 +478,28 @@ int kiFarmerGetSeedSeq() {
   KI_Allreduce(&in, &out, 1, MPI_2INT, MPI_MAXLOC, ki_cmm_domain);
   int cpu   = out.index;
   int nLeft = out.value;
+
+  int interval = (ki_world_size > 8) ? 10 : 1;
+  kiReportProgress(KI_CLOCK_MAIN, "Reads assembled", (long long)ki_nseq_processed, (long long)(ki_seqs->nSeq), interval);
+
+  if (ki_domain_rank == cpu) {
+    kipmsg(4, "Seqs processed = %d / %d\n", ki_nseq_processed, ki_seqs->nSeq);
+    kipmsg(5, "nLeft = %d\n", nLeft);
+  }
+  
+  if (ki_exeution_time > 0 && (int)(MPI_Wtime() - ki_time_beg) >= ki_exeution_time) {
+    termStatus = KI_TERMINATION_TIME;
+  }  
+  if (ki_read_depletion > 0 && 1.0 * ki_clock_count / ki_clock_total >= ki_read_depletion) {
+    kipmsg(1, "deplete = %.3f\n", 1.0 * ki_clock_count / ki_clock_total);
+    termStatus = KI_TERMINATION_DEPLETION;
+  }
+
+  if (termStatus != KI_TERMINATION_NONE) { /* return */
+    KI_Bcast_string(seed, cpu, ki_cmm_domain);
+    KI_FARMER_PACK(KI_STRING, seed,
+                   KI_INT, &termStatus);
+  }
 
   if (nLeft > 0) {
     if (ki_domain_rank == cpu) {
@@ -489,18 +515,31 @@ int kiFarmerGetSeedSeq() {
     }
   }
 
-  if (ki_domain_rank == cpu) {
-    kipmsg(4, "Seqs processed = %d / %d\n", ki_nseq_processed, ki_seqs->nSeq);
-    kipmsg(5, "nLeft = %d\n", nLeft);
-  }
-
-  int interval = (ki_world_size > 8) ? 10 : 1;
-  kiReportProgress(KI_CLOCK_MAIN, "Reads assembled", (long long)ki_nseq_processed, (long long)(ki_seqs->nSeq), interval);
-  
   KI_Bcast_string(seed, cpu, ki_cmm_domain);
   KI_FARMER_PACK(KI_STRING, seed,
-                 KI_INT, &status);
+                 KI_INT, &termStatus);
 }
+
+void kiUserSetTermination(int executionTime, float readDepletionFraction) {
+  KI_PACK_SEND_CMD(KI_CMD_SET_TERMINATION,
+                   KI_INT,   &executionTime,
+                   KI_FLOAT, &readDepletionFraction);
+  KI_RECV_UNPACK_CMD_BARE();
+}
+
+int  kiFarmerSetTermination() {
+  int executionTime;
+  float readDepletionFraction;
+  KI_FARMER_UNPACK(KI_INT,   &executionTime,
+                   KI_FLOAT, &readDepletionFraction);
+
+  ki_exeution_time  = executionTime;
+  ki_read_depletion = readDepletionFraction;
+  
+  return 0;
+}
+
+
 
 /* Get overlapping sequences */
 /* sequences that match query[t..$], for t in [0, strlen(query) - minOverlap] */

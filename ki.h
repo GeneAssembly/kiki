@@ -29,6 +29,7 @@
 #define KI_CMD_RAIPHY_ORIGINAL      17
 #define KI_CMD_STORE_STATE          18
 #define KI_CMD_RESTORE_STATE        19
+#define KI_CMD_SET_TERMINATION      20
 #define KI_CMD_TEST_ARGS            99
 
 
@@ -92,7 +93,7 @@ int  kiFarmerSetHashMode();
 void kiUserDummyAssemble(char* fileName);
 int  kiFarmerDummyAssemble();
 
-void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* seedStatus);
+void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* termStatus);
 int  kiFarmerGetSeedSeq();
 
 void kiUserGetOverlappingSeqs(char* query, int minOverlap, float maxMismatch, bool bErase, /*OUT*/alignment_t* aln);
@@ -112,6 +113,9 @@ int  kiFarmerStoreState();
 
 void kiUserRestoreState(char* filePrefix, /*OUT*/long long* nProcessed);
 int  kiFarmerRestoreState();
+
+void kiUserSetTermination(int executionTime, float readDepletionFraction);
+int  kiFarmerSetTermination();
 
 /* System functions */
 

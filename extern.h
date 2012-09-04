@@ -80,6 +80,9 @@
 #define KI_FASTA_ID_ONLY 0
 #define KI_FASTA_ID_DESC 1
 
+#define KI_TERMINATION_NONE      0
+#define KI_TERMINATION_TIME      1
+#define KI_TERMINATION_DEPLETION 2
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))

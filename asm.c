@@ -18,7 +18,7 @@ void checkTime(char* info) {
     return;
   }
   double time = MPI_Wtime();
-  double elapsed = time - global_time;
+  /* double elapsed = time - global_time; */
   global_time = time;
 
   /* C timer */
@@ -65,7 +65,8 @@ void hybridAssemble(int argc, char *argv[]) {
   int optPersist = 0;
   /* int optMinReadLen = 0;  */
   int optMinReadLen = 75; 
-  int abruptStop = 0;
+  float optDepletion = -1.0;
+  /* int abruptStop = 0; */
   
   /* Load sequences from multiple files */
   char inputFiles[200][200];
@@ -83,6 +84,7 @@ void hybridAssemble(int argc, char *argv[]) {
       kipm0("\t -u float|int  fraction of nodes used as users or the number of user nodes \n");
       kipm0("\t -v [level]    verbosity level (D = 3)  \n");
       kipm0("\t -persist [t]  checkpointing interval (eg, 30m, 6h, D = 1h) \n");
+      kipm0("\t -dep float    early termination when a fraction of reads are depleted (D = 1.0) \n");
       kipm0("\t -dot file     generate graphviz output \n");
       kipm0("\t -h            show this usage information \n\n");
 
@@ -108,6 +110,15 @@ void hybridAssemble(int argc, char *argv[]) {
       } 
     } else if (strcmp(argv[i], "-o") == 0) { 
       outputName = argv[++i];
+    } else if (strcmp(argv[i], "-dep") == 0) { 
+      if (i+1 < argc && argv[i+1][0] != '-') {        
+        optDepletion = atof(argv[++i]);
+        if (optDepletion <= 0 || optDepletion >= 1) {
+          optDepletion = -1.0;
+        } else {
+          kipmsg0(2, "optDepletion = %.3f\n", optDepletion);
+        }
+      }
     } else if (strcmp(argv[i], "-dot") == 0) {
       if (i+1 < argc && argv[i+1][0] != '-')
         optDot = atoi(argv[++i]);
@@ -170,6 +181,18 @@ void hybridAssemble(int argc, char *argv[]) {
       kiUserProcessVarLenReads(optMinReadLen, minLen, maxLen, minOverlap, &nSeqsLeft);
       kipmsg(2, "Total sequences after length processing = %ld\n", nSeqsLeft);
     }
+  }
+
+  if (optPersist > 0) {
+    int timeLeft = optPersist - ((int)MPI_Wtime() - global_start_time);
+    if (timeLeft <= 1) {       
+      fprintf(stderr, "Used up specified execution time before the start of assembly; increase \"-persist\" time!\n");
+      kiAbort(-1);
+    }
+  }
+  
+  if (kiIsDomainRoot()) {
+    kiUserSetTermination(optPersist, optDepletion);
   }
 
   kiBarrier();
@@ -246,21 +269,22 @@ void hybridAssemble(int argc, char *argv[]) {
   alignment_t*     matches = kiAllocAlignment();
   overlap_graph_t* graph   = kiAllocOverlapGraph(minOverlap);
 
-  int seedCount = 0;
-  int seedStatus = 0;
+  /* int seedCount = 0; */
+  int termStatus = 0;
   
   kiBarrier();
 
-  kiUserGetSeedSeq(seed, &seedStatus);
-
-  while (seed[0] !='\0') {
+  kiUserGetSeedSeq(seed, &termStatus);
+  
+  while (termStatus == KI_TERMINATION_NONE && seed[0] !='\0') {
+    
     kipmsg(4, "seed = '%s'\n", seed);
     /* if (kiIsDomainRoot() && seedCount++ % 10000 == 0) { */
-      char ithSeed[100];
-      sprintf(ithSeed, "New seed %d", ++seedCount);
-      checkTime(ithSeed);
+      /* char ithSeed[100]; */
+      /* sprintf(ithSeed, "New seed %d", ++seedCount); */
+      /* checkTime(ithSeed); */
     /* } */
-    
+
     for (d = 0; d < 2; ++d) {
       elongation[d][0] = '\0';
 
@@ -310,10 +334,10 @@ void hybridAssemble(int argc, char *argv[]) {
         char dstr[20];
         sprintf(dstr, "progress d=%d", d);
         checkTime(dstr);
-        if (optPersist > 0 && stopTimer(optPersist)) {
-           abruptStop = 1;
-          break;
-        }
+        /* if (optPersist > 0 && stopTimer(optPersist)) { */
+        /*    abruptStop = 1; */
+        /*   break; */
+        /* } */
 
         kipmsg(4, "iSolid = %d\n", iSolid);
         kipmsg(4, "v = %s\n", graph->vertices[iSolid]->name);
@@ -378,10 +402,10 @@ void hybridAssemble(int argc, char *argv[]) {
         
         step++;
       }
-      if (optPersist > 0 && stopTimer(optPersist)) {
-         abruptStop = 1;
-        break;
-      }
+      /* if (optPersist > 0 && stopTimer(optPersist)) { */
+      /*    abruptStop = 1; */
+      /*   break; */
+      /* } */
         
       kiOverlapGraphAppendContig(graph, iSeed, elongation[d]);
       kipmsg(4, "elongation %s %c = '%s'\n", seedName, d > 0 ? '-' : '+', elongation[d]);
@@ -415,13 +439,14 @@ void hybridAssemble(int argc, char *argv[]) {
       }
     }
 
-    if (optPersist > 0 && stopTimer(optPersist)) {
-      abruptStop = 1;
-      break;
-    }
+    /* if (optPersist > 0 && stopTimer(optPersist)) { */
+      /* abruptStop = 1; */
+      /* break; */
+    /* } */
     
-    kiUserGetSeedSeq(seed, &seedStatus);
+    kiUserGetSeedSeq(seed, &termStatus);
   }
+  kipmsg(3, "termStatus = %d\n", termStatus);
 
   kiFreeAlignment(matches);
   kiFreeOverlapGraph(graph);
@@ -430,7 +455,7 @@ void hybridAssemble(int argc, char *argv[]) {
   for (i = 0; i < 2; ++i) {
     kifree(elongation[i], KI_CONTIG_SIZE);
   }
-
+  
   /* fclose(fp1); */
   /* fclose(fp2); */
   /* fclose(fp3); */
@@ -440,12 +465,12 @@ void hybridAssemble(int argc, char *argv[]) {
   KI_File_close(&fh3);
   KI_File_close(&fh4);
 
-  int globalAbruptStop = 0;
-  MPI_Reduce(&abruptStop, &globalAbruptStop, 1, MPI_INT, MPI_SUM, 0, ki_cmm_domain);
+  /* int globalAbruptStop = 0; */
+  /* MPI_Reduce(&abruptStop, &globalAbruptStop, 1, MPI_INT, MPI_SUM, 0, ki_cmm_domain); */
 
   if (optPersist > 0) {
     if (kiIsDomainRoot()) {
-      if (globalAbruptStop == 0) {
+      if (termStatus == KI_TERMINATION_NONE) {
         char storeFile[KI_NAME_BUF_SIZE];  
         sprintf(storeFile, "%s.store", outputKey);
         KI_File_backup(storeFile);
