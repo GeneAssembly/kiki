@@ -247,10 +247,11 @@ void hybridAssemble(int argc, char *argv[]) {
   overlap_graph_t* graph   = kiAllocOverlapGraph(minOverlap);
 
   int seedCount = 0;
-
+  int seedStatus = 0;
+  
   kiBarrier();
 
-  kiUserGetSeedSeq(seed);
+  kiUserGetSeedSeq(seed, &seedStatus);
 
   while (seed[0] !='\0') {
     kipmsg(4, "seed = '%s'\n", seed);
@@ -419,7 +420,7 @@ void hybridAssemble(int argc, char *argv[]) {
       break;
     }
     
-    kiUserGetSeedSeq(seed);
+    kiUserGetSeedSeq(seed, seedStatus);
   }
 
   kiFreeAlignment(matches);

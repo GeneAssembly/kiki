@@ -453,14 +453,16 @@ int kiFarmerDummyAssemble() {
 }
 
 /* Get seed sequence to extend on */
-void kiUserGetSeedSeq(/*OUT*/char* seed) {
+void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* status) {
   KI_PACK_SEND_CMD_BARE(KI_CMD_GET_SEED_SEQ);
-  KI_RECV_UNPACK_CMD(KI_STRING, seed);
+  KI_RECV_UNPACK_CMD(KI_STRING, seed,
+                     KI_INT, status);
 }
 
 int kiFarmerGetSeedSeq() {
   char seed[KI_SEQ_BUF_SIZE] = "";
-
+  int status = 0;
+  
   struct {
     int value;
     int index;
@@ -496,7 +498,8 @@ int kiFarmerGetSeedSeq() {
   kiReportProgress(KI_CLOCK_MAIN, "Reads assembled", (long long)ki_nseq_processed, (long long)(ki_seqs->nSeq), interval);
   
   KI_Bcast_string(seed, cpu, ki_cmm_domain);
-  KI_FARMER_PACK(KI_STRING, seed);
+  KI_FARMER_PACK(KI_STRING, seed,
+                 KI_INT, &status);
 
 }
 

@@ -92,7 +92,7 @@ int  kiFarmerSetHashMode();
 void kiUserDummyAssemble(char* fileName);
 int  kiFarmerDummyAssemble();
 
-void kiUserGetSeedSeq(/*OUT*/char* seed);
+void kiUserGetSeedSeq(/*OUT*/char* seed, /*OUT*/int* status);
 int  kiFarmerGetSeedSeq();
 
 void kiUserGetOverlappingSeqs(char* query, int minOverlap, float maxMismatch, bool bErase, /*OUT*/alignment_t* aln);
