@@ -25,6 +25,14 @@ void checkTime(char* info) {
   char buffer[30];
   getCurrentTime(buffer);
   
+  /* struct timeval tv; */
+  /* time_t curtime; */
+  /* gettimeofday(&tv, NULL); */
+  /* curtime=tv.tv_sec; */
+  /* strftime(buffer, 30, "%m-%d-%Y %T.", localtime(&curtime)); */
+  
+  /* kipm("Time: %s (%.2f s elapsed) (MPI clock = %.2f s) (system clock = %s%ld)\n", info, elapsed, MPI_Wtime() - global_start_time, buffer, tv.tv_usec); */
+  /* kipm("Time: %s (%.2f s elapsed) (MPI clock = %.2f s) (system clock = %s)\n", info, elapsed, MPI_Wtime() - global_start_time, buffer); */
 }
 
 void hybridAssemble(int argc, char *argv[]) {
@@ -392,6 +400,10 @@ void hybridAssemble(int argc, char *argv[]) {
         
         step++;
       }
+      /* if (optPersist > 0 && stopTimer(optPersist)) { */
+      /*    abruptStop = 1; */
+      /*   break; */
+      /* } */
         
       kiOverlapGraphAppendContig(graph, iSeed, elongation[d]);
       kipmsg(4, "elongation %s %c = '%s'\n", seedName, d > 0 ? '-' : '+', elongation[d]);
