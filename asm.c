@@ -421,7 +421,7 @@ void hybridAssemble(int argc, char *argv[]) {
 
       int seqlen = strlen(contig);
       if (seqlen > 125) {
-        fprintf(fp, ">%d %s %d\n%s\n", iContig++, seedName, ki_domain_rank, contig);
+        fprintf(fp, ">Contig_%d_%d Len_%d_Seed_%s \n%s\n", ki_domain_rank, iContig++, seqlen, seedName, contig);
       }
     }
     
