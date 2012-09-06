@@ -209,7 +209,7 @@ void hybridAssemble(int argc, char *argv[]) {
   }
   
   if (ki_domain_size > 1) {
-    sprintf(contigFile, "%s.contig%s", outputKey, ki_domain_rank);
+    sprintf(contigFile, "%s.contig.%d", outputKey, ki_domain_rank);
   }
   else {
     sprintf(contigFile, "%s.contig", outputKey);
@@ -235,7 +235,11 @@ void hybridAssemble(int argc, char *argv[]) {
 
   FILE *fp;
   char fmode[2] = "w";
-  if (optPersist > 0 && nProcessed > 0) sprintf(fmode, "a+");
+  if (optPersist > 0 && nProcessed > 0) {
+    fmode[0] = 'a';
+    fmode[1] = '+';
+  }
+
   fp = fopen(contigFile, fmode);
   if (fp == NULL) {
     kipmsg(0, "Could not open output file '%s'\n", contigFile);
