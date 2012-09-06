@@ -198,9 +198,9 @@ void hybridAssemble(int argc, char *argv[]) {
   kiBarrier();
 
   char contigFile1[KI_NAME_BUF_SIZE];
-  char contigFile2[KI_NAME_BUF_SIZE];
-  char contigFile3[KI_NAME_BUF_SIZE];
-  char contigFile4[KI_NAME_BUF_SIZE];
+  /* char contigFile2[KI_NAME_BUF_SIZE]; */
+  /* char contigFile3[KI_NAME_BUF_SIZE]; */
+  /* char contigFile4[KI_NAME_BUF_SIZE]; */
 
   char outputKey[KI_NAME_BUF_SIZE];
 
@@ -213,9 +213,9 @@ void hybridAssemble(int argc, char *argv[]) {
   }
   
   sprintf(contigFile1, "%s.long.contig",   outputKey);
-  sprintf(contigFile2, "%s.medium.contig", outputKey);
-  sprintf(contigFile3, "%s.short.contig",  outputKey);
-  sprintf(contigFile4, "%s.tiny.contig",   outputKey);
+  /* sprintf(contigFile2, "%s.medium.contig", outputKey); */
+  /* sprintf(contigFile3, "%s.short.contig",  outputKey); */
+  /* sprintf(contigFile4, "%s.tiny.contig",   outputKey); */
 
   if (optPersist > 0 && kiIsDomainRoot()) {
     KI_File_backup(contigFile1);
