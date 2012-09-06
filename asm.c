@@ -332,10 +332,6 @@ void hybridAssemble(int argc, char *argv[]) {
         char dstr[20];
         sprintf(dstr, "progress d=%d", d);
         checkTime(dstr);
-        /* if (optPersist > 0 && stopTimer(optPersist)) { */
-        /*    abruptStop = 1; */
-        /*   break; */
-        /* } */
 
         kipmsg(4, "iSolid = %d\n", iSolid);
         kipmsg(4, "v = %s\n", graph->vertices[iSolid]->name);
@@ -400,10 +396,6 @@ void hybridAssemble(int argc, char *argv[]) {
         
         step++;
       }
-      /* if (optPersist > 0 && stopTimer(optPersist)) { */
-      /*    abruptStop = 1; */
-      /*   break; */
-      /* } */
         
       kiOverlapGraphAppendContig(graph, iSeed, elongation[d]);
       kipmsg(4, "elongation %s %c = '%s'\n", seedName, d > 0 ? '-' : '+', elongation[d]);
