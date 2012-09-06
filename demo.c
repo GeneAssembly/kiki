@@ -49,7 +49,7 @@ void testLoadFasta() {
   kiUserLoadFasta("short.fa", &nSeqs);
   kiUserLoadFasta("medium.fa", &nSeqs);
   /* kiUserLoadFasta("SMG-5.fa", &nSeqs); */
-  printf("Read %d sequences from fasta.\n", nSeqs);
+  printf("Read %lld sequences from fasta.\n", nSeqs);
 }
 
 void testMemInfo() {
@@ -99,7 +99,7 @@ void dummyAssemble() {
   char* fileName = "medium11.fa";
   /* char* fileName = "SMG-5.fa"; */
   kiUserLoadFasta(fileName, &nSeqs);
-  printf("Loaded %d sequences from '%s'.\n", nSeqs, fileName);
+  printf("Loaded %lld sequences from '%s'.\n", nSeqs, fileName);
 
   kiUserDummyAssemble(fileName);
 }
@@ -115,10 +115,10 @@ void exactAssemble(int argc, char *argv[]) {
   for (i = 1; i < argc; ++i) {
     fileName = argv[i];
     kiUserLoadFasta(fileName, &nSeqs);
-    printf("Loaded %d sequences from '%s'.\n", nSeqs, fileName);
+    printf("Loaded %lld sequences from '%s'.\n", nSeqs, fileName);
     nTotalSeqs += nSeqs;
   }
-  if (i > 2) printf("Total sequences loaded = %d\n", nTotalSeqs);
+  if (i > 2) printf("Total sequences loaded = %lld\n", nTotalSeqs);
 
   char* dot = strrchr(fileName, '.');
   if (dot != NULL) *dot = '\0';
@@ -138,10 +138,10 @@ void hybridAssemble(int argc, char *argv[]) {
   for (i = 1; i < argc; ++i) {
     fileName = argv[i];
     kiUserLoadFasta(fileName, &nSeqs);
-    printf("Loaded %d sequences from '%s'.\n", nSeqs, fileName);
+    printf("Loaded %lld sequences from '%s'.\n", nSeqs, fileName);
     nTotalSeqs += nSeqs;
   }
-  if (i > 2) printf("Total sequences loaded = %d\n", nTotalSeqs);
+  if (i > 2) printf("Total sequences loaded = %lld\n", nTotalSeqs);
 
   char* dot = strrchr(fileName, '.');
   if (dot != NULL) *dot = '\0';

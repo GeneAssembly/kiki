@@ -71,7 +71,7 @@ void proteinSearch(int argc, char *argv[]) {
   char usage[] = "search -p profile -i database -s cutoff";
 
   /* Read sequences from multiple files */
-  int nSeqs = 0, nTotalSeqs = 0;
+  long long nSeqs = 0, nTotalSeqs = 0;
   char* fileName = NULL;
   char* profileName = NULL;
 
@@ -112,7 +112,7 @@ void proteinSearch(int argc, char *argv[]) {
     } 
   }
   if (nTotalSeqs > nSeqs && kiIsDomainRoot())
-    printf("Total sequences read = %d\n", nTotalSeqs);
+    printf("Total sequences read = %lld\n", nTotalSeqs);
 
   if (!fileName || !profileName) {
     fprintf(stderr, "Usage: %s\n", usage);

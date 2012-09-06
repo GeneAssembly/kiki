@@ -102,10 +102,10 @@ void raiTest(int argc, char *argv[]) {
 void raiParallel(int argc, char *argv[]) {
   char usage[] = "rai -d database -i fasta1 fasta2 ...  \n   or: rai -d database -I fasta.file.list\n";
   
-  int nSeqs      = 0;
-  int nTotalSeqs = 0;
-  char* fileName = NULL;
-  char* dbName   = NULL;
+  long long nSeqs      = 0;
+  long long nTotalSeqs = 0;
+  char*     fileName   = NULL;
+  char*     dbName     = NULL;
 
   int i;
   for (i = 1; i < argc; ++i) {
@@ -134,7 +134,7 @@ void raiParallel(int argc, char *argv[]) {
     } 
   }
   if (nTotalSeqs > nSeqs && kiIsDomainRoot())
-    printf("Total sequences read = %d\n", nTotalSeqs);
+    printf("Total sequences read = %lld\n", nTotalSeqs);
 
   if (!fileName || !dbName) {
     fprintf(stderr, "Usage: %s\n", usage);
