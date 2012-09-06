@@ -22,13 +22,13 @@ void kiUpcaseSeq(char* seq);
 void kiReverseComplementSeq(char* seq, /*OUT*/char* comp);
 void kiPartialReverseComplementSeq(char* seq, int beg, /*OUT*/char* comp);
 void kiReverseComplementSeqN(char* seq, int n, /*OUT*/char* comp);
-inline char kiComplementBase(char c);
-inline int  kiBaseIndex(char c);
+char kiComplementBase(char c);
+int  kiBaseIndex(char c);
 float kiSeqCmp(char* s1, char* s2); /* returns percent of discrepancy */
 float kiSeqNCmp(char* s1, char* s2, int n);
 float kiSeqNCmpX(char* s1, char* s2, int n, /*OUT*/int* iDiff);
 bool kiIsProtein(char* s);
-inline void kiDna2Protein(char* dna, char* aa, int frame);
+void kiDna2Protein(char* dna, char* aa, int frame);
 
 /* Alignment routines */
 float kiPairwiseAlignmentLocal(char* s1, char* s2);
