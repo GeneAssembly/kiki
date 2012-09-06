@@ -197,11 +197,7 @@ void hybridAssemble(int argc, char *argv[]) {
 
   kiBarrier();
 
-  char contigFile1[KI_NAME_BUF_SIZE];
-  /* char contigFile2[KI_NAME_BUF_SIZE]; */
-  /* char contigFile3[KI_NAME_BUF_SIZE]; */
-  /* char contigFile4[KI_NAME_BUF_SIZE]; */
-
+  char contigFile[KI_NAME_BUF_SIZE];
   char outputKey[KI_NAME_BUF_SIZE];
 
   if (outputName != NULL) {
@@ -212,16 +208,15 @@ void hybridAssemble(int argc, char *argv[]) {
     sprintf(outputKey, "%s", fileName);
   }
   
-  sprintf(contigFile1, "%s.long.contig",   outputKey);
-  /* sprintf(contigFile2, "%s.medium.contig", outputKey); */
-  /* sprintf(contigFile3, "%s.short.contig",  outputKey); */
-  /* sprintf(contigFile4, "%s.tiny.contig",   outputKey); */
-
-  if (optPersist > 0 && kiIsDomainRoot()) {
-    KI_File_backup(contigFile1);
-    KI_File_backup(contigFile2);
-    KI_File_backup(contigFile3);
-    KI_File_backup(contigFile4);
+  if (ki_domain_size > 1) {
+    sprintf(contigFile, "%s.contig%s", outputKey, ki_domain_rank);
+  }
+  else {
+    sprintf(contigFile, "%s.contig", outputKey);
+  }
+  
+  if (optPersist > 0) {
+    KI_File_backup(contigFile);
   }
     
   /* File name prefix for graphviz */
@@ -238,19 +233,18 @@ void hybridAssemble(int argc, char *argv[]) {
     KI_Bcast(&nProcessed, 1, MPI_LONG_LONG, 0, ki_cmm_domain);
   }
 
+  FILE *fp;
+  char fmode[2] = "w";
+  if (optPersist > 0 && nProcessed > 0) sprintf(fmode, "a+");
+  fp = fopen(contigFile, fmode);
+  if (fp == NULL) {
+    kipmsg(0, "Could not open output file '%s'\n", contigFile);
+    kiAbort(-1);
+  }
+
   /* return; */
   if (kiIsDomainRoot()) kiUserLoadReadSeqs();
-  
-  KI_File fh1, fh2, fh3, fh4;
-  int rc1, rc2, rc3, rc4;
-  int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
-  if (optPersist > 0 && nProcessed > 0) amode |= MPI_MODE_APPEND;
-  
-  rc1 = KI_File_open(contigFile1, amode, MPI_INFO_NULL, &fh1);
-  rc2 = KI_File_open(contigFile2, amode, MPI_INFO_NULL, &fh2);
-  rc3 = KI_File_open(contigFile3, amode, MPI_INFO_NULL, &fh3);
-  rc4 = KI_File_open(contigFile4, amode, MPI_INFO_NULL, &fh4);  
-  
+
   char query[KI_SEQ_BUF_SIZE]; 
   char seed[KI_SEQ_BUF_SIZE];
   char seedName[KI_SEQ_BUF_SIZE];
@@ -422,27 +416,10 @@ void hybridAssemble(int argc, char *argv[]) {
       kipmsg(4, "contig '%s' (%d) =  %s\n", seedName, strlen(contig), contig);
 
       int seqlen = strlen(contig);
-      /* if (seqlen > 1500) kipm0("seqlen = %d\n", seqlen); */
-
-      if (seqlen >= 300) {
-        /* FILE* fp = (seqlen < 600)  ? fp1 : */
-                   /* (seqlen < 2000) ? fp2 : fp3; */
-        /* fprintf(fp, ">%s\n%s\n", seedName, contig); */
-        KI_File* fp = (seqlen < 1000) ? &fh3 : 
-                      (seqlen < 2000) ? &fh2 : &fh1; 
-        kifprintf(*fp, ">%d %s %d\n%s\n", iContig++, seedName, ki_domain_rank, contig);
-      } else {
-        if (seqlen > 125) {
-          KI_File* fp = &fh4;
-          kifprintf(*fp, ">%d %s %d\n%s\n", iContig++, seedName, ki_domain_rank, contig);
-        }
+      if (seqlen > 125) {
+        fprintf(fp, ">%d %s %d\n%s\n", iContig++, seedName, ki_domain_rank, contig);
       }
     }
-
-    /* if (optPersist > 0 && stopTimer(optPersist)) { */
-      /* abruptStop = 1; */
-      /* break; */
-    /* } */
     
     kiUserGetSeedSeq(seed, &termStatus);
   }
@@ -456,17 +433,7 @@ void hybridAssemble(int argc, char *argv[]) {
     kifree(elongation[i], KI_CONTIG_SIZE);
   }
   
-  /* fclose(fp1); */
-  /* fclose(fp2); */
-  /* fclose(fp3); */
-
-  KI_File_close(&fh1);
-  KI_File_close(&fh2);
-  KI_File_close(&fh3);
-  KI_File_close(&fh4);
-
-  /* int globalAbruptStop = 0; */
-  /* MPI_Reduce(&abruptStop, &globalAbruptStop, 1, MPI_INT, MPI_SUM, 0, ki_cmm_domain); */
+  fclose(fp);
 
   if (optPersist > 0) {
     if (kiIsDomainRoot()) {
