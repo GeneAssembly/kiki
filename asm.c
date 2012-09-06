@@ -275,6 +275,8 @@ void hybridAssemble(int argc, char *argv[]) {
 
   /* int seedCount = 0; */
   int termStatus = 0;
+  float sumWeight, sumSqWeight; /* on the current contig */
+  float seedWeight;
   
   kiBarrier();
 
@@ -288,7 +290,9 @@ void hybridAssemble(int argc, char *argv[]) {
       /* sprintf(ithSeed, "New seed %d", ++seedCount); */
       /* checkTime(ithSeed); */
     /* } */
-
+    sumWeight = sumSqWeight = 0.;
+    seedWeight = 1.0;
+    
     for (d = 0; d < 2; ++d) {
       elongation[d][0] = '\0';
 
@@ -305,14 +309,15 @@ void hybridAssemble(int argc, char *argv[]) {
           break;
         }
         kiOverlapGraphAddMatches(graph, matches, 0, minOverlap);
-        kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed);
+        kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed, /*OUT*/&seedWeight);
         if (kiOgvUnextended(graph, iSeed)) {   /* in case we need to start from a different seed */
           kiUserGetOverlappingSeqs(query, minOverlap, .0, /*erase*/bErase, /*OUT*/matches);
           kiOverlapGraphAddMatches(graph, matches, 0, minOverlap);
-          kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed);
+          kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed, /*OUT*/&seedWeight);
         }
         strcpy(seedName, graph->vertices[iSeed]->name);
-        
+        sumWeight = seedWeight * readLen;
+        sumSqWeight = seedWeight * seedWeight * readLen;
       } else {                /* reverse direction */
         kiReverseComplementSeq(seed, query);
         kipmsg(5, "reverse seed = %s\n", query);
@@ -321,7 +326,7 @@ void hybridAssemble(int argc, char *argv[]) {
         kiOverlapGraphAddMatches(graph, matches, 0, minOverlap);
         kiUserGetOverlappingSeqs(query, minOverlap, .0, /*erase*/bErase, /*OUT*/matches);
         kiOverlapGraphAddMatches(graph, matches, 0, minOverlap);
-        kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed);
+        kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed, /*OUT*/&seedWeight);
       }
       
       sprintf(dotPrefix, "%s-%s-%c", outputKey, graph->vertices[iSeed]->name, (d > 0 ? 'b' : 'f'));
@@ -352,7 +357,7 @@ void hybridAssemble(int argc, char *argv[]) {
           /* kipm("Oops\n"); */
           /* reap current elongation */
           kiOverlapGraphExtend(graph, &iSolid);
-          kiOverlapGraphAppendContig(graph, iSeed, elongation[d]);
+          kiOverlapGraphAppendContig(graph, iSeed, elongation[d], &sumWeight, &sumSqWeight);
 
           if (graph->maxTailOffset >= KI_CONTIG_SIZE / 2 - 1000) {
             kiClearAlignment(matches);
@@ -403,7 +408,7 @@ void hybridAssemble(int argc, char *argv[]) {
         step++;
       }
         
-      kiOverlapGraphAppendContig(graph, iSeed, elongation[d]);
+      kiOverlapGraphAppendContig(graph, iSeed, elongation[d], &sumWeight, &sumSqWeight);
       kipmsg(4, "elongation %s %c = '%s'\n", seedName, d > 0 ? '-' : '+', elongation[d]);
     
       if (optDot > 0) kiOverlapGraphExportDot(graph, dotPrefix, step, NULL, dotBig);
@@ -416,10 +421,14 @@ void hybridAssemble(int argc, char *argv[]) {
     if (d > 0) {                /* not preempted */
       kiCombineElongation(seed, elongation[0], elongation[1], contig);
       kipmsg(4, "contig '%s' (%d) =  %s\n", seedName, strlen(contig), contig);
-
-      int seqlen = strlen(contig);
-      if (seqlen > 125) {
-        fprintf(fp, ">Contig_%d_%d Len_%d_Seed_%s \n%s\n", ki_domain_rank, iContig++, seqlen, seedName, contig);
+      
+      int seqLen = strlen(contig);
+      float covMean = sumWeight/seqLen;
+      float covSd = sqrt((double)sumSqWeight/seqLen - covMean*covMean);
+      
+      if (seqLen > 125) {
+        fprintf(fp, ">Contig_%d_%d Len_%d_Cov_%.1f_StDev_%.1f_Seed_%s \n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, seedName, contig);
+        /* kiAbort(-1); */
       }
     }
     

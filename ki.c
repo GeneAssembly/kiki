@@ -1535,7 +1535,7 @@ void kiPackMatchingSeq(void* buf, int bufSize, int* position, /*IN*/char* name, 
     kipmsg(4, "skip kiPackMatchingSeq to prevent recv buf overflow\n");
     return;
   }
-  
+  /* flag is used as offset */
   kiPackArgs(buf, bufSize, position, KI_STRING, name, KI_STRING, seq, KI_INT, &flag, KI_UNDEF);
   kipmsg(7, "name = '%s', seq = '%s', flag = %d --> pos = %d\n", name, seq, flag, *position);
 }
@@ -3325,12 +3325,12 @@ void kiOverlapGraphAdd(overlap_graph_t* g, char* name, char* seq, int offset, in
 void kiOverlapGraphAddMatches(overlap_graph_t* g, alignment_t* matches, int baseOffset, int minOverlap) {
   int i;
 
-  /* temporary slow sorting */
+  /* temporary slow sorting; sorting by offset (flag) */
   int swapFlag, j;
   char* swap;
   for (j = 0; j < matches->nSeq-1; ++j) {
     for (i = j+1; i < matches->nSeq; ++i) {
-      if (matches->flags[i] < matches->flags[j]) {
+      if (matches->flags[i] < matches->flags[j]) { 
           swap = matches->seqs[j];
           matches->seqs[j] = matches->seqs[i];
           matches->seqs[i] = swap;
@@ -3352,7 +3352,7 @@ void kiOverlapGraphAddMatches(overlap_graph_t* g, alignment_t* matches, int base
   }
 }
 
-void kiOverlapGraphReviseSeed(overlap_graph_t* g, char* query, int* iNewSeed) {
+void kiOverlapGraphReviseSeed(overlap_graph_t* g, char* query, int* iNewSeed, float* seedWeight) {
   int nBest = 0;
   int iBest = 0;
   int best  = 0;
@@ -3384,6 +3384,7 @@ void kiOverlapGraphReviseSeed(overlap_graph_t* g, char* query, int* iNewSeed) {
     v->flag = KI_OGV_TODO;
   }
   *iNewSeed = v->id;
+  *seedWeight = v->occr;
 }
 
 bool kiOgvUnextended(overlap_graph_t* g, int id) {
@@ -3464,8 +3465,8 @@ void kiOverlapGraphGetContig(overlap_graph_t* g, int iSeed, /*OUT*/char* contig)
 }
 
 
-void kiOverlapGraphAppendContig(overlap_graph_t* g, int iSeed, /*OUT*/char* contig) {
-  int i;
+void kiOverlapGraphAppendContig(overlap_graph_t* g, int iSeed, /*OUT*/char* contig, /*OUT*/float* sumWeight, /*OUT*/float* sumSqWeight) {
+  int i, len;
   char* p = contig; p += strlen(p);
   ogvertex_t* v = g->vertices[iSeed];
   ogedge_t* e;
@@ -3473,8 +3474,12 @@ void kiOverlapGraphAppendContig(overlap_graph_t* g, int iSeed, /*OUT*/char* cont
     for (i = 0; i < 4; ++i) {
       if ((e = v->oes[i]) != NULL) {
         if (e->v->flag == KI_OGV_SOLID) {
-          strcpy(p, e->ext); p += strlen(p);
+          len = strlen(e->ext);
+          strcpy(p, e->ext); p += len;
           v = e->v;
+          *sumWeight += len * e->weight;
+          *sumSqWeight += len * (e->weight * e->weight);
+          /* kipmsg(2, "%.2f x %d\n", e->weight, len); */
           break;
         }
       }
