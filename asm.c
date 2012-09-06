@@ -63,6 +63,7 @@ void hybridAssemble(int argc, char *argv[]) {
   int optDot = 0;               /* dot option: 0: none, 1: small, 2: big */
   int optProgress = 0;
   int optPersist = 0;
+  int optFasta = 0;
   /* int optMinReadLen = 0;  */
   int optMinReadLen = 75; 
   float optDepletion = -1.0;
@@ -85,6 +86,7 @@ void hybridAssemble(int argc, char *argv[]) {
       kipm0("\t -v [level]    verbosity level (D = 3)  \n");
       kipm0("\t -persist [t]  checkpointing interval (eg, 30m, 6h, D = 1h) \n");
       kipm0("\t -dep float    early termination when a fraction of reads are depleted (D = 1.0) \n");
+      kipm0("\t -fasta        output contigs in FASTA format\n");
       kipm0("\t -dot file     generate graphviz output \n");
       kipm0("\t -h            show this usage information \n\n");
 
@@ -132,6 +134,8 @@ void hybridAssemble(int argc, char *argv[]) {
       }
     } else if (strcmp(argv[i], "-progress") == 0) {
       optProgress = 1;
+    } else if (strcmp(argv[i], "-fasta") == 0) {
+      optFasta = 1;
     } else if (strcmp(argv[i], "-persist") == 0) {
       optPersist = 50 * 60;      
       if (i+1 < argc && argv[i+1][0] != '-') {
@@ -425,10 +429,13 @@ void hybridAssemble(int argc, char *argv[]) {
       int seqLen = strlen(contig);
       float covMean = sumWeight/seqLen;
       float covSd = sqrt((double)sumSqWeight/seqLen - covMean*covMean);
-      
+
       if (seqLen > 125) {
-        fprintf(fp, ">Contig_%d_%d Len_%d_Cov_%.1f_StDev_%.1f_Seed_%s \n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, seedName, contig);
-        /* kiAbort(-1); */
+        if (optFasta != 0) {
+          fprintf(fp, ">Contig_%d_%d len_%d_cov_%.1f_stdev_%.1f_seed_%s \n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, seedName, contig);
+        } else {
+          fprintf(fp, "Contig_%d_%d\t%d\t%.1f\t%.1f\t%s\t%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, seedName, contig);
+        }
       }
     }
     
