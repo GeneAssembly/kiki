@@ -171,17 +171,23 @@ void hybridAssemble(int argc, char *argv[]) {
   if (nTotalSeqs > nSeqs && kiIsDomainRoot())
     printf("Total sequences = %lld\n", nTotalSeqs);
 
+  int readLen = 0;
   if (kiIsDomainRoot()) {
     int minLen, maxLen;
     kiUserGetMinMaxReadLen(&minLen, &maxLen);
     kipmsg(2, "Read length range = [%d, %d]\n", minLen, maxLen);
-
+    readLen = minLen;
+    
     if (minLen < maxLen && optMinReadLen > 0) {
       long long nSeqsLeft;
       kiUserProcessVarLenReads(optMinReadLen, minLen, maxLen, minOverlap, &nSeqsLeft);
       kipmsg(2, "Total sequences after length processing = %ld\n", nSeqsLeft);
+      if (optMinReadLen > minLen) readLen = optMinReadLen;
+      if (optMinReadLen > maxLen) readLen = maxLen;
+      kipmsg(2, "Read length after processing = %d\n", readLen);
     }
   }
+  KI_Bcast(&readLen, 1, MPI_INT, 0, ki_cmm_domain);
 
   if (optPersist > 0) {
     int timeLeft = optPersist - ((int)MPI_Wtime() - global_start_time);
