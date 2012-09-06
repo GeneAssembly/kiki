@@ -491,7 +491,7 @@ int kiFarmerGetSeedSeq() {
     termStatus = KI_TERMINATION_TIME;
   }  
   if (ki_read_depletion > 0 && 1.0 * ki_clock_count / ki_clock_total >= ki_read_depletion) {
-    kipmsg(1, "deplete = %.3f\n", 1.0 * ki_clock_count / ki_clock_total);
+    kipmsg(3, "deplete = %.3f\n", 1.0 * ki_clock_count / ki_clock_total);
     termStatus = KI_TERMINATION_DEPLETION;
   }
 
