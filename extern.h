@@ -29,7 +29,7 @@
 #define KI_VECTOR        0x00100000
 #define KI_CHAR          MPI_CHAR
 #define KI_BYTE          MPI_BYTE
-#define KI_BOOL          MPI_INT
+#define KI_BOOL          MPI_BYTE
 #define KI_INT           MPI_INT
 #define KI_LONG          MPI_LONG
 #define KI_FLOAT         MPI_FLOAT
