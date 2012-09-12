@@ -22,8 +22,8 @@ Installation
     cd bin<br/>
     cmake ..<br/>
     make ki<br/>
-    ./ki -i ../test/short.fa -o test
-    cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl >test.fa
+    ./ki -i ../test/short.fa -o test<br/>
+    cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl >test.fa<br/>
 
 Usage
 -----
