@@ -179,6 +179,18 @@ bool kiIsProtein(char* s) {
   return false;
 }
 
+float kiCalcGCContent(char* dna) {
+  int ngc = 0;
+  int n = 0;
+  char* p;
+  for (p = dna; *p != '\0'; ++p, ++n) {
+    if (*p == 'G' || *p == 'C' || *p == 'g' || *p == 'c')
+      ++ngc;
+  }
+  return 100.*ngc/n;            /* in percentage */
+}
+
+
 /* Alignment */
 
 char blosum62indices[24] = {'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X', '*'};

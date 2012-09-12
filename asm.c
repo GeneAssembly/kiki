@@ -426,15 +426,16 @@ void hybridAssemble(int argc, char *argv[]) {
       kiCombineElongation(seed, elongation[0], elongation[1], contig);
       kipmsg(4, "contig '%s' (%d) =  %s\n", seedName, strlen(contig), contig);
       
-      int seqLen = strlen(contig);
+      int   seqLen  = strlen(contig);
       float covMean = sumWeight/seqLen;
-      float covSd = sqrt((double)sumSqWeight/seqLen - covMean*covMean);
+      float covSd   = sqrt((double)sumSqWeight/seqLen - covMean*covMean);
+      float gcRatio = kiCalcGCContent(contig);
 
       if (seqLen > 125) {
         if (optFasta != 0) {
-          fprintf(fp, ">Contig_%d_%d len_%d_cov_%.1f_stdev_%.1f_seed_%s \n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, seedName, contig);
+          fprintf(fp, ">Contig_%d_%d len_%d_cov_%.1f_stdev_%.1f_GC_%.1f_seed_%s \n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, gcRatio, seedName, contig);
         } else {
-          fprintf(fp, "Contig_%d_%d\t%d\t%.1f\t%.1f\t%s\t%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, seedName, contig);
+          fprintf(fp, "Contig_%d_%d\t%d\t%.1f\t%.1f\t%.1f\t%s\t%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, gcRatio, seedName, contig);
         }
       }
     }

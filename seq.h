@@ -29,6 +29,7 @@ float kiSeqNCmp(char* s1, char* s2, int n);
 float kiSeqNCmpX(char* s1, char* s2, int n, /*OUT*/int* iDiff);
 bool kiIsProtein(char* s);
 void kiDna2Protein(char* dna, char* aa, int frame);
+float kiCalcGCContent(char* dna); /* in percentage */
 
 /* Alignment routines */
 float kiPairwiseAlignmentLocal(char* s1, char* s2);
