@@ -436,7 +436,7 @@ void hybridAssemble(int argc, char *argv[]) {
 
       if (seqLen > 125) {
         if (optFasta != 0) {
-          fprintf(fp, ">Contig_%d_%d len_%d_cov_%.1f_stdev_%.1f_GC_%.1f_seed_%s \n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, gcRatio, seedName, contig);
+          fprintf(fp, ">Contig_%d_%d len_%d_cov_%.1f_stdev_%.1f_GC_%.1f_seed_%s\n%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, gcRatio, seedName, contig);
         } else {
           fprintf(fp, "Contig_%d_%d\t%d\t%.1f\t%.1f\t%.1f\t%s\t%s\n", ki_domain_rank, iContig++, seqLen, covMean, covSd, gcRatio, seedName, contig);
         }
