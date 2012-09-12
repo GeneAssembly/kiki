@@ -23,6 +23,7 @@ Installation
     cmake ..<br/>
     make ki<br/>
     ./ki -i ../test/short.fa -o test
+    cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl >test.fa
 
 Usage
 -----
