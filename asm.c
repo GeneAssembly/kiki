@@ -217,12 +217,15 @@ void hybridAssemble(int argc, char *argv[]) {
     /* char* name  = slash ? slash+1 : fileName; */
     sprintf(outputKey, "%s", fileName);
   }
+
+  char contigPostfix[10] = "";  /* or "tab" */
+  if (optFasta) strcpy(contigPostfix, ".fa");
   
   if (ki_domain_size > 1) {
-    sprintf(contigFile, "%s.contig.%d", outputKey, ki_domain_rank);
+    sprintf(contigFile, "%s.contig%s.%d", outputKey, contigPostfix, ki_domain_rank);
   }
   else {
-    sprintf(contigFile, "%s.contig", outputKey);
+    sprintf(contigFile, "%s.contig%s", outputKey, contigPostfix);
   }
   
   if (optPersist > 0) {
