@@ -41,9 +41,12 @@ void trainFastaListOriginal(char* fileName, char* dbName, int kmerSize) {
     fprintf(stderr, "class=%s \t fa=%s\n", className, fastaName);
     
     if (strcmp(className, oldClass) != 0) {
-      /* add old profile vector */
-      kiFreqToRaiVectorOriginal(freq, vector);
-      kiRaiDbAdd(db, className, vector);
+      if (strlen(oldClass) > 0) {
+        /* add old profile vector */
+        kiFreqToRaiVectorOriginal(freq, vector);
+        kiRaiDbAdd(db, className, vector);
+      }
+      
       /* start new vector */
       kiClearKmerFreq(freq);
       strcpy(oldClass, className);
