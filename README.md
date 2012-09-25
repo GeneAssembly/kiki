@@ -31,7 +31,7 @@ Installation
      cat test.contig* | sort -k2nr | tab2fa.pl -m 1000 >test.fa <br/>
 
    Example 2: convert the fasta contig file to the tab-delimited format: [ id, len, cov, stdev, GC, seed, seq ] <br/>
-     tab2fa.pl <test.fa >test.contig <br/>
+     tab2fa.pl < test.fa >test.contig <br/>
 
 
 Usage
