@@ -23,7 +23,16 @@ Installation
     cmake ..<br/>
     make ki<br/>
     ./ki -i ../test/short.fa -o test<br/>
-    cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl >test.fa<br/>
+    cat test.contig* | ../scripts/tab2fa.pl >test.fa <br/>
+
+4. Scripts for converting 
+
+   Example 1: sort contigs by length and create a fasta file containing contigs longer than 1kb. <br/>
+     cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl -m 1000 >test.fa <br/><br/>
+
+   Example 2: convert the fasta contig file to the tab-delimited format [ id, len, cov, stdev, GC, seed, seq ] <br/>
+     cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl -m 1000 >test.fa <br/>
+
 
 Usage
 -----
@@ -36,6 +45,7 @@ Usage
          -persist [t]  checkpointing interval (eg, 30m, 6h, D = 1h) 
          -dot file     generate graphviz output 
          -h            show this usage information 
+
 
 
 License
