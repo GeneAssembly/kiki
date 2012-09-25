@@ -25,13 +25,13 @@ Installation
     ./ki -i ../test/short.fa -o test<br/>
     cat test.contig* | ../scripts/tab2fa.pl >test.fa <br/>
 
-4. Scripts for processing contig files
+4. Scripts for processing contig files (kiki/scripts/)
 
    Example 1: sort contigs by length and create a fasta file containing contigs longer than 1kb. <br/>
-     cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl -m 1000 >test.fa <br/>
+     cat test.contig* | sort -k2nr | tab2fa.pl -m 1000 >test.fa <br/>
 
-   Example 2: convert the fasta contig file to the tab-delimited format [ id, len, cov, stdev, GC, seed, seq ] <br/>
-     cat test.contig* | sort -k2nr | ../scripts/tab2fa.pl -m 1000 >test.fa <br/>
+   Example 2: convert the fasta contig file to the tab-delimited format: [ id, len, cov, stdev, GC, seed, seq ] <br/>
+     tab2fa.pl <test.fa >test.contig <br/>
 
 
 Usage
