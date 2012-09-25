@@ -44,7 +44,7 @@ void trainFastaListOriginal(char* fileName, char* dbName, int kmerSize) {
       if (strlen(oldClass) > 0) {
         /* add old profile vector */
         kiFreqToRaiVectorOriginal(freq, vector);
-        kiRaiDbAdd(db, className, vector);
+        kiRaiDbAdd(db, oldClass, vector);
       }
       
       /* start new vector */
