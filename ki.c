@@ -24,7 +24,7 @@
 #define KI_PACK_SEND_CMD(CMD, ...)   { int pos = 0; int cmd = CMD;                \
   kiPackArgs(ki_out_buf, KI_BUF_SIZE, &pos, KI_INT, &cmd, __VA_ARGS__, KI_UNDEF); \
   if (kiIsParallel())                                                             \
-    KI_Send(ki_out_buf, pos, MPI_PACKED, kiRandDealer(), 0, ki_cmm_user_dealer);  \
+    KI_Send(ki_out_buf, pos, MPI_PACKED, kiCorrespondingDealer(), 0, ki_cmm_user_dealer); \
   else                                                                            \
     kiRunCommand(cmd); }
 
@@ -35,7 +35,7 @@
 #define KI_PACK_SEND_CMD_BARE(CMD)   { int pos = 0; int cmd = CMD;                \
   kiPackArgs(ki_out_buf, KI_BUF_SIZE, &pos, KI_INT, &cmd, KI_UNDEF);              \
   if (kiIsParallel())                                                             \
-    KI_Send(ki_out_buf, pos, MPI_PACKED, kiRandDealer(), 0, ki_cmm_user_dealer);  \
+    KI_Send(ki_out_buf, pos, MPI_PACKED, kiCorrespondingDealer(), 0, ki_cmm_user_dealer);  \
   else                                                                            \
     kiRunCommand(cmd); }
 
@@ -170,7 +170,7 @@ int kiFarmerTestArgs() {
 
 void kiUserCall(int cmd) {      /* demo only: unregistered functions */
   MPI_Status status;
-  KI_Send(&cmd, 1, MPI_INT, kiRandDealer(), 0, ki_cmm_user_dealer);
+  KI_Send(&cmd, 1, MPI_INT, kiCorrespondingDealer(), 0, ki_cmm_user_dealer);
   KI_Recv(ki_in_buf, KI_BUF_SIZE, MPI_PACKED, MPI_ANY_SOURCE, 0, ki_cmm_user_dealer, &status);
 }
 
@@ -1374,6 +1374,10 @@ int kiRunCommand(int cmd) {
     outputSize = (*func)();
   }
   return outputSize;
+}
+
+int kiCorrespondingDealer() {
+  return ki_top_dealer + ki_domain_rank;
 }
 
 int kiRandDealer() {
