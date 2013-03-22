@@ -87,6 +87,7 @@ void hybridAssemble(int argc, char *argv[]) {
       kipm0("\t -persist [t]  checkpointing interval (eg, 30m, 6h, D = 1h) \n");
       kipm0("\t -dep float    early termination when a fraction of reads are depleted (D = 1.0) \n");
       kipm0("\t -fasta        output contigs in FASTA format\n");
+      kipm0("\t -split n      split long reads into overlapping reads of n bp; filter out shorter reads (D = 75)\n");
       kipm0("\t -dot file     generate graphviz output \n");
       kipm0("\t -h            show this usage information \n\n");
 
