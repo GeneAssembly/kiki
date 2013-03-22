@@ -336,7 +336,14 @@ void hybridAssemble(int argc, char *argv[]) {
         kiOverlapGraphReviseSeed(graph, query, /*OUT*/&iSeed, /*OUT*/&seedWeight);
       }
       
-      sprintf(dotPrefix, "%s-%s-%c", outputKey, graph->vertices[iSeed]->name, (d > 0 ? 'b' : 'f'));
+      char vname[20];
+      for (i = 0; i < 20 && graph->vertices[iSeed]->name[i] != '\0'; i++) {
+        vname[i] = graph->vertices[iSeed]->name[i];
+        if (vname[i] == '/') vname[i] = '_';
+      }
+      vname[i] = '\0';
+
+      sprintf(dotPrefix, "%s-%s-%c", outputKey, vname, (d > 0 ? 'b' : 'f'));
 
       char adventure[KI_SEQ_BUF_SIZE];
       int baseOffset;
