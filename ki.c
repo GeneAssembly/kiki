@@ -3417,7 +3417,7 @@ void kiOverlapGraphExplore(overlap_graph_t* g, int vi, /*OUT*/char* adventure) {
     if (bestEdge == NULL) break;
     strcpy(p, bestEdge->ext); p += strlen(p);
     kipmsg(5, "adventure len = %d\n", p - adventure);
-    if (p - adventure > 200) break;
+    /* if (p - adventure > 200) break; */
     v = bestEdge->v;
   }
 }

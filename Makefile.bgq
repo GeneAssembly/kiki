@@ -1,0 +1,18 @@
+CC     = mpixlc_r
+LD     = $(CC)
+FFLAGS = -g -O3
+CFLAGS = -g -O3 -I.
+TARGET = kiki 
+OBJS   = debug.o mem.o io.o comm.o seq.o hash_chain.o hash_oa.o util.o raiphy.o ki.o asm.o 
+
+all: kiki 
+
+%.o : %.c
+	$(CC) $(CFLAGS) $(DEFS) -c $<
+
+kiki: $(OBJS)
+	$(LD) $(LDFLAGS) -o $(TARGET) $(OBJS)
+
+clean:
+	rm -f $(TARGET) $(OBJS)
+
