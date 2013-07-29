@@ -57,8 +57,8 @@ int KI_File_seek(KI_File fh, MPI_Offset offset, int whence) {
   }
 }
 
-int KI_File_read(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-  status->count = 0;
+int KI_File_read(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status, size_t *elements) {
+  *elements = 0;
   int ret = 0;
   if (kiIsParallel() && ki_domain_size > 1)  {
     ret = MPI_File_read(fh.fh, buf, count, datatype, status);
@@ -69,46 +69,61 @@ int KI_File_read(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_St
       fprintf(stderr, "MPI_File_read failed: %s\n", estr);
       return ret;
     }
+    MPI_Get_count(status, datatype, (int *)elements);
   } else {
     int sz;
     MPI_Type_size(datatype, &sz);
-    status->count = fread(buf, sz, count, fh.fp);
+    *elements = fread(buf, sz, count, fh.fp);
     return ferror(fh.fp) ? !MPI_SUCCESS : MPI_SUCCESS;
   }
   return ret;
 }
 
-int KI_File_write(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-  status->count = 0;
-  if (kiIsParallel() && ki_domain_size > 1) 
-    return MPI_File_write(fh.fh, buf, count, datatype, status);
-  else {
+int KI_File_write(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status, size_t *elements) {
+  *elements = 0;
+  if (kiIsParallel() && ki_domain_size > 1) {
+	int ret = MPI_File_write(fh.fh, buf, count, datatype, status);
+  	if (ret == MPI_SUCCESS) {
+  	  MPI_Get_count(status, datatype, (int *)elements);
+  	}
+    return ret;
+  } else {
     int sz;
     MPI_Type_size(datatype, &sz);
-    status->count = fwrite(buf, sz, count, fh.fp);
+    *elements = fwrite(buf, sz, count, fh.fp);
     return ferror(fh.fp) ? !MPI_SUCCESS : MPI_SUCCESS;
   }
 }
 
-int KI_File_read_shared(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-  if (kiIsParallel() && ki_domain_size > 1) 
-    return MPI_File_read_shared(fh.fh, buf, count, datatype, status);
-  else {
+int KI_File_read_shared(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status, size_t *elements) {
+  if (kiIsParallel() && ki_domain_size > 1) {
+    int ret = MPI_File_read_shared(fh.fh, buf, count, datatype, status);
+    if (ret == MPI_SUCCESS) {
+      MPI_Get_count(status, datatype, (int *)elements);
+    }
+    return ret;
+  } else {
     int sz;
     MPI_Type_size(datatype, &sz);
-    status->count = fread(buf, sz, count, fh.fp);
+    *elements = fread(buf, sz, count, fh.fp);
+    fprintf(stderr, "File_read_shared elements: %u\n", *elements);
     fflush(fh.fp);
     return ferror(fh.fp) ? !MPI_SUCCESS : MPI_SUCCESS;
   }
 }
 
-int KI_File_write_shared(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-  if (kiIsParallel() && ki_domain_size > 1) 
-    return MPI_File_write_shared(fh.fh, buf, count, datatype, status);
-  else {
+int KI_File_write_shared(KI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status, size_t *elements) {
+  if (kiIsParallel() && ki_domain_size > 1) {
+	int ret = MPI_File_write_shared(fh.fh, buf, count, datatype, status);
+	if (ret == MPI_SUCCESS) {
+		MPI_Get_count(status, datatype, (int *)elements);
+	}
+    return ret;
+  } else {
     int sz;
     MPI_Type_size(datatype, &sz);
-    status->count = fwrite(buf, sz, count, fh.fp);
+    *elements = fwrite(buf, sz, count, fh.fp);
+    fprintf(stderr, "File_write_shared elements: %u\n", *elements);
     fflush(fh.fp);
     return ferror(fh.fp) ? !MPI_SUCCESS : MPI_SUCCESS;
   }
@@ -180,7 +195,8 @@ void kifprintf(KI_File fh, char* format, ...) {
 
   int len = strlen(buf);
   MPI_Status status;
-  KI_File_write_shared(fh, buf, len, MPI_CHAR, &status);
+  size_t elements;
+  KI_File_write_shared(fh, buf, len, MPI_CHAR, &status, &elements);
 }
 
 

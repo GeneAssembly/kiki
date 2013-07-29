@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "extern.h"
 
@@ -887,6 +888,7 @@ int  kiFarmerRAIphyOriginal() {
   char buf[bufSize];
   char* bufTop = buf;
   MPI_Status status;
+  size_t elements;
   
   rai_db_t* db = NULL;
   db = loadDatabase(dbName);
@@ -900,12 +902,12 @@ int  kiFarmerRAIphyOriginal() {
     sprintf(bufTop, ">%s\n%s\n", ki_seqs->names[i], db->names[class]);
     bufTop += strlen(bufTop);
     if (bufTop-buf > bufSize/2) {
-      KI_File_write_shared(fh, buf, bufTop-buf, MPI_CHAR, &status);
+      KI_File_write_shared(fh, buf, bufTop-buf, MPI_CHAR, &status, &elements);
       bufTop = buf;
     }
   }
 
-  KI_File_write_shared(fh, buf, bufTop-buf, MPI_CHAR, &status);
+  KI_File_write_shared(fh, buf, bufTop-buf, MPI_CHAR, &status, &elements);
   KI_File_close(&fh);
 
   kiFreeRaiDb(db);
@@ -2333,6 +2335,7 @@ long long kiReadFastqParallel(char* fileName) {
   MPI_Offset fileSize;
   MPI_Offset beg;
   MPI_Status status;
+  size_t elements;
   
   int rc;
   char* buf;  
@@ -2341,7 +2344,7 @@ long long kiReadFastqParallel(char* fileName) {
   char *name, *seq;
   char *p, *q, *pp, *qq;
   /* char readBuf[KI_SEQ_BUF_SIZE]; */
-  int chunk;
+  MPI_Offset chunk;
   double timeStart = MPI_Wtime();
 
   rc = KI_File_open(fileName, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
@@ -2351,7 +2354,7 @@ long long kiReadFastqParallel(char* fileName) {
   }
 
   KI_File_get_size(fh, &fileSize);
-  kipmsg0(5, "fileSize = %ld\n", fileSize);
+  kipmsg(5, "fileSize = %ld\n", fileSize);
 
   buf = (char*)kimalloc(KI_BUF_SIZE);
 
@@ -2360,17 +2363,17 @@ long long kiReadFastqParallel(char* fileName) {
   if (ki_domain_rank == ki_domain_size - 1)
     chunk = fileSize - beg;
 
-  kipmsg(6, "Reading %ld: %ld\n", beg, chunk);
+  kipmsg(5, "Reading %ld: %ld in rank %ld of %ld\n", beg, chunk, ki_domain_rank, ki_domain_size);
   
-  int   maxEntrySize = 800; 
-  int   bytesToRead  = MIN(chunk + maxEntrySize, fileSize - beg);
-  int   bufSize      = MIN(bytesToRead, KI_BUF_SIZE-1);
-  char* pos          = buf;
-  bool  lastChunk    = (fileSize - beg <= chunk);
+  MPI_Offset maxEntrySize = 800;
+  MPI_Offset bytesToRead  = MIN(chunk + maxEntrySize, fileSize - beg);
+  MPI_Offset bufSize      = MIN(bytesToRead, KI_BUF_SIZE-1);
+  char* pos               = buf;
+  bool  lastChunk         = (fileSize - beg <= chunk);
 
-  int moveSize = 0;
-  int count = 0;
-  int totalCount = 0;
+  MPI_Offset moveSize = 0;
+  MPI_Offset count = 0;
+  MPI_Offset totalCount = 0;
   long long nSeqsAdded = 0;
 
   if (chunk > 0 && beg < fileSize) {
@@ -2379,17 +2382,18 @@ long long kiReadFastqParallel(char* fileName) {
     while (bytesToRead > 0) {
       count = MIN(bytesToRead, (bufSize - moveSize));
       assert(count > 0);
-      int countCopy = count;
-      int ret = KI_File_read(fh, pos, count, MPI_BYTE, &status);
+      assert(count < INT_MAX);
+      MPI_Offset countCopy = count;
+      int ret = KI_File_read(fh, pos, (int)count, MPI_BYTE, &status, &elements);
       if (ret != MPI_SUCCESS) {
         fprintf(stderr, "MPI_read error\n");
       }
-      if (count != status.count) {
-        kipm("bytesToRead(l) = %ld, bytesToRead(d) = %d\n", bytesToRead, bytesToRead);
-        kipm("bufSize = %d, moveSize = %d\n", bufSize, moveSize);
-        kipm("countCopy = %d, count = %d, status.count = %d\n", countCopy, count, status.count);
+      if (count != elements) {
+        kipm("bytesToRead(l) = %lu, bytesToRead(d) = %d\n", bytesToRead, bytesToRead);
+        kipm("bufSize = %lu, moveSize = %lu\n", bufSize, moveSize);
+        kipm("countCopy = %lu, count = %lu, status.count = %d\n", countCopy, count, elements);
       }
-      assert(count == status.count);
+      assert(count == elements);
       bytesToRead -= count;
 
       if (lastChunk && bytesToRead == 0)
@@ -2445,7 +2449,7 @@ long long kiReadFastqParallel(char* fileName) {
         for (pp++;   *pp != '\r' && *pp != '\n'; ++pp); /* skip quality line */
 
         pp++;
-        assert(*pp == '@');
+        /* assert(*pp == '@'); */
 
         if (totalCount + (pp - pos) > chunk) {
           bytesToRead = 0;
@@ -2466,25 +2470,6 @@ long long kiReadFastqParallel(char* fileName) {
           pos = buf + moveSize;
           break;
         }
-
-        if (*p != '@') {
-          kipm("lastChunk = %d, bytesToRead = %d\n", lastChunk, bytesToRead);
-          kipm("wrong: p - (pos+count) = %d, count = %d, *p = '%c'\n", p - (pos+count), count, *p);
-          kipm("*(p-1) = '%c'\n", *(p-1));
-          
-          /* char tmpStr[1002]; */
-          /* char* beg = (p-buf) > 500 ? p-500 : buf; */
-          /* char* end = (pos+count-p) > 500 ? p+500 : pos+count; */
-          
-          *(p+300) = '\0';// *(p-1) = 'B';
-          kipm("Context='%s'\n", p-2);
-
-          /* memset(tmpStr, 0, 1001); */
-          /* memcpy(tmpStr, beg, end-beg); */
-          /* kipm("Context='%s'\n", tmpStr); */
-        }
-        
-        assert(*p == '@');
 
       }
       totalCount += count;
@@ -2514,6 +2499,7 @@ long long kiReadFastaParallel(char* fileName) {
   MPI_Offset fileSize;
   MPI_Offset beg;
   MPI_Status status;
+  size_t elements;
   
   int rc;
   char* buf;  
@@ -2559,8 +2545,8 @@ long long kiReadFastaParallel(char* fileName) {
     pos = buf;
     while (bytesToRead > 0) {
       count = MIN(bytesToRead, bufSize - moveSize);
-      KI_File_read(fh, pos, count, MPI_BYTE, &status);
-      assert(count == status.count);
+      KI_File_read(fh, pos, count, MPI_BYTE, &status, &elements);
+      assert(count == elements);
       bytesToRead -= count;
 
       if (lastChunk && bytesToRead == 0)
@@ -3556,6 +3542,7 @@ long long kiStoreState(char* filePrefix) {
 
   KI_File fh;
   MPI_Status status;
+  size_t elements;
   KI_File_open(filename, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
 
   if (kiIsDomainRoot()) {
@@ -3565,8 +3552,8 @@ long long kiStoreState(char* filePrefix) {
       displsSum += cnts[j];
       kipmsg(3, "Storing: cnts[%d] = %d, displs[%d] = %d\n", j, cnts[j], j, displs[j]);
     }
-    KI_File_write(fh, &ki_domain_size, 1,     MPI_INT, &status);
-    KI_File_write(fh, displs, ki_domain_size, MPI_INT, &status);
+    KI_File_write(fh, &ki_domain_size, 1,     MPI_INT, &status, &elements);
+    KI_File_write(fh, displs, ki_domain_size, MPI_INT, &status, &elements);
   }
 
   int displ;
@@ -3583,7 +3570,7 @@ long long kiStoreState(char* filePrefix) {
 
   kipmsg(3, "displ = %d\n", displ);
   KI_File_seek(fh, displ, MPI_SEEK_SET);
-  KI_File_write(fh, &nSeq, 1, MPI_INT, &status);
+  KI_File_write(fh, &nSeq, 1, MPI_INT, &status, &elements);
 
   int i;
   int bit;
@@ -3595,14 +3582,14 @@ long long kiStoreState(char* filePrefix) {
     *p |= (bit << (7 - i % 8));
     if ((i+1) % 8 == 0) ++p;
     if ((i+1) % (KI_BUF_SIZE*8) == 0) {
-      KI_File_write(fh, ki_tmp_buf, KI_BUF_SIZE, MPI_BYTE, &status);
+      KI_File_write(fh, ki_tmp_buf, KI_BUF_SIZE, MPI_BYTE, &status, &elements);
       memset(ki_tmp_buf, 0, KI_BUF_SIZE);
       nLeft -= KI_BUF_SIZE;
       p = ki_tmp_buf;
       kipm("nLeft = %d KI_BUF_SIZE = %d\n", nLeft, KI_BUF_SIZE);
     }
   }
-  KI_File_write(fh, ki_tmp_buf, nLeft, MPI_BYTE, &status);
+  KI_File_write(fh, ki_tmp_buf, nLeft, MPI_BYTE, &status, &elements);
 
   KI_File_close(&fh);
 
@@ -3619,6 +3606,7 @@ long long kiRestoreState(char* filePrefix) {
   
   KI_File fh;
   MPI_Status status;
+  size_t elements;
   int rc;
   
   rc = KI_File_open(filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
@@ -3631,16 +3619,16 @@ long long kiRestoreState(char* filePrefix) {
   if (kiIsDomainRoot()) {
     int nParts;
     displs = (int*)kiArenaMalloc(KI_ARENA_FARMER, sizeof(int) * ki_domain_size);
-    KI_File_read(fh, &nParts, 1, MPI_INT, &status);
-    assert(status.count = 1);
+    KI_File_read(fh, &nParts, 1, MPI_INT, &status, &elements);
+    assert(elements = 1);
     
     if (nParts != ki_domain_size) {
       fprintf(stderr, "Number of parts in .store file does not match domain size (old = %d vs now = %d).\nRestore failed.\n", nParts, ki_domain_size);
       KI_File_close(&fh);
       kiAbort(-1);
     }
-    KI_File_read(fh, displs, ki_domain_size, MPI_INT, &status);
-    assert(status.count = ki_domain_size);
+    KI_File_read(fh, displs, ki_domain_size, MPI_INT, &status, &elements);
+    assert(elements = ki_domain_size);
   }
 
   int displ;
@@ -3657,8 +3645,8 @@ long long kiRestoreState(char* filePrefix) {
 
   int nSeq;
   KI_File_seek(fh, displ, MPI_SEEK_SET);
-  KI_File_read(fh, &nSeq, 1, MPI_INT, &status);
-  assert(status.count = 1);
+  KI_File_read(fh, &nSeq, 1, MPI_INT, &status, &elements);
+  assert(elements = 1);
   
   if (nSeq != ki_seqs->nSeq) {
     fprintf(stderr, "Mismatch in number of sequences (old = %d vs now = %d).\nRestore failed.\n", nSeq, ki_seqs->nSeq);
@@ -3674,8 +3662,8 @@ long long kiRestoreState(char* filePrefix) {
   while (nLeft > 0) {
     nToRead = kiCeilingDevidedBy(nLeft, 8); /* in bytes */
     if (nToRead > KI_BUF_SIZE) nToRead = KI_BUF_SIZE;
-    KI_File_read(fh, ki_tmp_buf, nToRead, MPI_BYTE, &status);
-    assert(status.count = nToRead);
+    KI_File_read(fh, ki_tmp_buf, nToRead, MPI_BYTE, &status, &elements);
+    assert(elements = nToRead);
     nLeft -= nToRead * 8;
     for (p = ki_tmp_buf; i < nSeq; ++i) {
       bit = (*p >> (7 - i % 8)) & 1;
