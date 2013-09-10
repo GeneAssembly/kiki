@@ -100,16 +100,16 @@ void kiScanFastaForFreq(char* fileName, kmer_freq_t* freq) {
   /* v = kifree(v, sizeof(double)*(1<<(2*freq->kmerSize))); */
 }
 
-double* kiFreqToRai(kmer_freq_t* freq) {
+void kiFreqToRaiVector(kmer_freq_t* freq, double* v) {
   int i, j, k = freq->kmerSize;
   int dim = 1 << (2*k);
-  double* v = (double*)kimalloc(sizeof(double)*dim);
   double r;
   long long f, f1, g, g1;
   int mask[k];
   for (j = 1; j <= k - 2; ++j) {
     mask[j] = (1 << (j*2+2)) - 1;           /* 4 ^ (k-1) */
   }
+  memset(v, 0, sizeof(double)*dim);
   for (i = 0; i < dim; ++i) {
     v[i] = 0.;
     for (j = 1; j <= k - 2; ++j) {
@@ -118,16 +118,15 @@ double* kiFreqToRai(kmer_freq_t* freq) {
       f1 = freq->count[k-1][i >> 2];               /* f(x_1, x_2, ..., x_{k-1} */
       g  = freq->count[j+1][i & mask[j]];          /* f(x_{k-j},  ..., x_k     */
       g1 = freq->count[j][(i & mask[j]) >> 2];     /* f(x_{k-j},  ..., x_{k-1} */
-      kipm("%d, %d, %d, %d\n", f, f1, g, g1);
+      /* kipm("%d, %d, %d, %d\n", f, f1, g, g1); */
       if (f1 == 0 || g1 == 0) continue;
       r = log(((double)f/(double)f1) / ((double)g/(double)g1)) / log(2.);
-      kipm("  i=%d  rai_%d = %f\n", i, j, r);
+      /* kipm("  i=%d  rai_%d = %f\n", i, j, r); */
       v[i] += r;
       /* break; */
     }
     /* break; */
   }
-  return v;
 }
 
 rai_db_t* kiAllocRaiDb(int kmerSize) {

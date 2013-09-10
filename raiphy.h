@@ -13,7 +13,7 @@ void kiScanSeqsForFreq(alignment_t* seqs, kmer_freq_t* freq);
 void kiScanFastaForFreq(char* fileName, kmer_freq_t* freq);
 void kiFreqToRaiVectorOriginal(kmer_freq_t* freq, double* vector);
 
-double* kiFreqToRai(kmer_freq_t* freq);
+void kiFreqToRaiVector(kmer_freq_t* freq, double* vector);
 
 
 typedef struct {
