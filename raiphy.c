@@ -103,7 +103,7 @@ void kiScanFastaForFreq(char* fileName, kmer_freq_t* freq) {
 void kiFreqToRaiVector(kmer_freq_t* freq, double* v) {
   int i, j, k = freq->kmerSize;
   int dim = 1 << (2*k);
-  double r;
+  double r, fd, gd, dmin = 0.1;
   long long f, f1, g, g1;
   int mask[k];
   for (j = 1; j <= k - 2; ++j) {
@@ -118,9 +118,11 @@ void kiFreqToRaiVector(kmer_freq_t* freq, double* v) {
       f1 = freq->count[k-1][i >> 2];               /* f(x_1, x_2, ..., x_{k-1} */
       g  = freq->count[j+1][i & mask[j]];          /* f(x_{k-j},  ..., x_k     */
       g1 = freq->count[j][(i & mask[j]) >> 2];     /* f(x_{k-j},  ..., x_{k-1} */
-      /* kipm("%d, %d, %d, %d\n", f, f1, g, g1); */
       if (f1 == 0 || g1 == 0) continue;
-      r = log(((double)f/(double)f1) / ((double)g/(double)g1)) / log(2.);
+      fd = f > 0 ? (double)f : dmin;
+      gd = g > 0 ? (double)g : dmin;
+      /* kipm("%d, %d, %d, %d, %g, %g\n", f, f1, g, g1, fd, gd); */
+      r = log((fd/(double)f1) / (gd/(double)g1)) / log(2.);
       /* kipm("  i=%d  rai_%d = %f\n", i, j, r); */
       v[i] += r;
       /* break; */
