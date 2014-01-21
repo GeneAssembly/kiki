@@ -133,7 +133,7 @@ void trainFastaListOriginal(char* fileName, char* dbName, int kmerSize) {
 }
 
 void userMain(int argc, char *argv[]) {
-  char usage[] = "rait -o database -i otu.fasta.table\n";
+  char usage[] = "rait [-k 7] -o database -i otu.fasta.table \n";
 
   char* db       = NULL;
   char* fileName = NULL;
@@ -148,6 +148,10 @@ void userMain(int argc, char *argv[]) {
       db = argv[++i];
     } else if (strcmp(argv[i], "-k") == 0) { 
       kmerSize = atoi(argv[++i]);
+      if (kmerSize < 3 || kmerSize > 10) {
+        fprintf(stderr, "K value out of range [3, 10] (%d); use 7 instead\n", kmerSize);
+        kmerSize = 7;
+      }
     } else if (strcmp(argv[i], "-new") == 0) { 
         newImpl = true;
     }

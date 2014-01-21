@@ -123,7 +123,7 @@ int KI_File_write_shared(KI_File fh, void *buf, int count, MPI_Datatype datatype
     int sz;
     MPI_Type_size(datatype, &sz);
     *elements = fwrite(buf, sz, count, fh.fp);
-    fprintf(stderr, "File_write_shared elements: %u\n", *elements);
+    /* fprintf(stderr, "File_write_shared elements: %u\n", *elements); */
     fflush(fh.fp);
     return ferror(fh.fp) ? !MPI_SUCCESS : MPI_SUCCESS;
   }

@@ -52,6 +52,7 @@ void kiScanSeqsForFreq(alignment_t* seqs, kmer_freq_t* freq) {
   char* p;
   int dim = 1 << (2*freq->kmerSize);
   int mask = dim - 1;
+  int rcshift = (freq->kmerSize - 1) * 2;
 
   for (i = 0; i < seqs->nSeq; ++i) {
     j = 1;
@@ -60,7 +61,7 @@ void kiScanSeqsForFreq(alignment_t* seqs, kmer_freq_t* freq) {
     for (p = seqs->seqs[i]; *p != '\0'; ++p) {
       /* kipm("%c", *p); */
       index1 <<= 2; index1 |= rai_base2int[(int)*p]; index1 &= mask;
-      index2 >>= 2; index2 |= (rai_base2int[base2complement[(int)*p]] << 12); 
+      index2 >>= 2; index2 |= (rai_base2int[base2complement[(int)*p]] << rcshift); 
 
       if (j < freq->kmerSize) { ++j; continue; }
 
@@ -86,7 +87,7 @@ void kiScanFastaForFreq(char* fileName, kmer_freq_t* freq) {
   seqs = kiReadFasta(fa);
   fclose(fa);
 
-  kipmsg(3, "Read %s contains %d sequences.\n", fileName, seqs->nSeq);
+  kipmsg(3, "File %s contains %d sequences.\n", fileName, seqs->nSeq);
   kiScanSeqsForFreq(seqs, freq);
 
   int i;
@@ -207,27 +208,34 @@ void kiPrintRaiDb(FILE* fp, rai_db_t* db) {
 }
 
 rai_db_t* loadDatabase(char* fileName) {
-
-  char buf[1000000] = "";
+  char* line = NULL;
+  size_t len = 0;
+  ssize_t read;
   char *p, *q;
   FILE* fp = fopen(fileName, "r");
-  if (fgets(buf, sizeof(buf), fp) == NULL) {
-    fprintf(stderr, "Error reading first line\n");
-  }
   int k = 7;
+  if ((read = getline(&line, &len, fp)) == -1) {
+    fprintf(stderr, "Error reading first line\n");
+  } else {
+    /* Example: %WORD_LENGTH:8 */
+    int wordlen = 0;
+    wordlen = atoi(line+13);
+    if (wordlen > 2) k = wordlen;
+  }
+  
   int nDim = 1 << (k * 2);
+  /* kipm("k = %d, dim = %d\n", k, nDim); */
   int i;
   char* name;
   double* vector;
   
   rai_db_t* db = kiAllocRaiDb(k);
   
-  while(fgets(buf,sizeof(buf),fp) != NULL) {
-    for (p = buf; *p != ':'; ++p); *p = '\0';
+  while ((read = getline(&line, &len, fp)) != -1) {
+    for (p = line; *p != ':'; ++p); *p = '\0';
     kiRaiDbGrow(db);
-    name = kistrdup(buf);
+    name = kistrdup(line);
     vector = (double*)kimalloc(sizeof(double)*nDim);
-    /* kipm("name = %s\n", name); */
     for (i = 0; i < nDim; ++i) {
       p++;
       for (q = p; *q != '\0' && *q != ':'; q++); *q = '\0';
@@ -239,8 +247,9 @@ rai_db_t* loadDatabase(char* fileName) {
     db->names[db->nClass-1]   = name;
     /* printf("name = %s\n", db->names[db->nClass-1]); */
     /* printf("v[5] = %.3f\n", db->vectors[db->nClass-1][16000]); */
-    
   }
+
+  if (line) free(line);
   
   return db;
 }
@@ -257,6 +266,7 @@ int classifySequenceOriginal(char* seq, rai_db_t* db, double* margin) {
   int k = db->kmerSize;
   int dim = db->nDim;
   int mask = dim - 1;
+  int rcshift = (db->kmerSize - 1) * 2;
 
   int v[dim];
   /* int nz[dim]; */
@@ -277,7 +287,7 @@ int classifySequenceOriginal(char* seq, rai_db_t* db, double* margin) {
     
   for (p = seq; *p != '\0'; ++p) {
     index1 <<= 2; index1 |= rai_base2int[(int)*p]; index1 &= mask;
-    index2 >>= 2; index2 |= (rai_base2int[base2complement[(int)*p]] << 12); 
+    index2 >>= 2; index2 |= (rai_base2int[base2complement[(int)*p]] << rcshift); 
 
     if (j < k) { ++j; continue; }
 
@@ -365,8 +375,9 @@ int classifySequenceOriginal(char* seq, rai_db_t* db, double* margin) {
 
   if (margin != NULL) *margin = (best_score - second_score);
 
+  /* kipm("db->nClass = %d\n", db->nClass); */
   /* kipm("best_score = %.3f\n", best_score); */
-  /* kipm("best_index = %.3f\n", best_index); */
+  /* kipm("best_index = %d\n", best_index); */
   return best_index;
 }
 
@@ -399,8 +410,9 @@ void trainFromFastaOriginal(char* fileName, int kmerSize) {
   kipm("training %s...\n", fileName);
 
   int k = kmerSize;             /* default: 7 */
-  int dim = 1 << 14;
+  int dim = 1 << (2*k);
   int mask = dim - 1;
+  int rcshift = (kmerSize - 1) * 2;
 
   double dbv[dim];
   memset(dbv, 0.0, sizeof(double)*dim);
@@ -430,7 +442,7 @@ void trainFromFastaOriginal(char* fileName, int kmerSize) {
     for (p = seqs->seqs[i]; *p != '\0'; ++p) {
       /* kipm("%c", *p); */
       index1 <<= 2; index1 |= rai_base2int[(int)*p]; index1 &= mask;
-      index2 >>= 2; index2 |= (rai_base2int[base2complement[(int)*p]] << 12); 
+      index2 >>= 2; index2 |= (rai_base2int[base2complement[(int)*p]] << rcshift); 
 
       if (j < k) { ++j; continue; }
 
