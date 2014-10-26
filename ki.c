@@ -3646,7 +3646,7 @@ long long kiRestoreState(char* filePrefix) {
   int nSeq;
   KI_File_seek(fh, displ, MPI_SEEK_SET);
   KI_File_read(fh, &nSeq, 1, MPI_INT, &status, &elements);
-  assert(elements = 1);
+  assert(elements == 1);
 
   if (nSeq != ki_seqs->nSeq) {
     fprintf(stderr, "Mismatch in number of sequences (old = %d vs now = %d).\nRestore failed.\n", nSeq, ki_seqs->nSeq);
@@ -3663,7 +3663,7 @@ long long kiRestoreState(char* filePrefix) {
     nToRead = kiCeilingDevidedBy(nLeft, 8); /* in bytes */
     if (nToRead > KI_BUF_SIZE) nToRead = KI_BUF_SIZE;
     KI_File_read(fh, ki_tmp_buf, nToRead, MPI_BYTE, &status, &elements);
-    assert(elements = nToRead);
+    assert(elements == nToRead);
     nLeft -= nToRead * 8;
     for (p = ki_tmp_buf; i < nSeq; ++i) {
       bit = (*p >> (7 - i % 8)) & 1;
