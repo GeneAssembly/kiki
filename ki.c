@@ -42,7 +42,7 @@
 
 #define KI_RECV_UNPACK_CMD_BARE() { MPI_Status status;  \
   KI_Recv(ki_in_buf, KI_BUF_SIZE, MPI_PACKED, MPI_ANY_SOURCE, 0, ki_cmm_user_dealer, &status);}
-  
+
 
 /* Global variables */
 
@@ -137,7 +137,7 @@ void kiUserTestArgs(/*IN */ int n, int* array, char* kmer, int kmer_id,
                    KI_V_INT,  n, array,
                    KI_STRING, kmer,
                    KI_INT,    &kmer_id);
-  
+
   KI_RECV_UNPACK_CMD(KI_V_INT,  new_n, new_array,
                      KI_STRING, new_kmer,
                      KI_INT,    new_kmer_id);
@@ -148,7 +148,7 @@ int kiFarmerTestArgs() {
   char kmer[100], new_kmer[100];
   int n, kmer_len, kmer_id, new_kmer_id;
   int i;
-  
+
   KI_FARMER_UNPACK(KI_V_INT,  &n, array,
                    KI_STRING, kmer,
                    KI_INT,    &kmer_id);
@@ -187,7 +187,7 @@ int kiFarmerMemInfo() {
 
   long totalUsed = 0;
   KI_Allreduce(&used, &totalUsed, 1, MPI_LONG, MPI_SUM, ki_cmm_domain);
-  
+
   KI_FARMER_PACK(KI_LONG, &totalUsed);
 }
 
@@ -195,7 +195,7 @@ int kiFarmerMemInfo() {
 void kiUserLoadSeq(char* seq, /*OUT*/ seq_id_t* id) {
   KI_PACK_SEND_CMD(KI_CMD_LOAD_SEQ,
                    KI_STRING, seq);
-  
+
   KI_RECV_UNPACK_CMD(KI_INT, &(id->id),
                      KI_INT, &(id->cpu));
 }
@@ -210,9 +210,9 @@ int kiFarmerLoadSeq() {
     id = kiAlignmentParseAndAdd(ki_seqs, "", seq);
     kiHashtableLoadSeq(id.id);
   }
-  
+
   KI_Bcast(&id, sizeof(id), MPI_BYTE, ki_round_robin, ki_cmm_domain);
-  
+
   KI_FARMER_PACK(KI_INT, &(id.id),
                  KI_INT, &(id.cpu));
 }
@@ -227,9 +227,9 @@ void kiUserLoadFasta(char* fileName, /*OUT*/long long* nSeqs) {
 int kiFarmerLoadFasta() {
   char fileName[200];
   KI_FARMER_UNPACK(KI_STRING, fileName);
-  
+
   long long nSeqs = kiReadFastaParallel(fileName);
-  
+
   /* kiHashtableLoadAllSeqs(); */
   kiHashtableLoadAllSeqsFixedLength();
 
@@ -246,9 +246,9 @@ void kiUserReadFasta(char* fileName, /*OUT*/long long* nSeqs) {
 int kiFarmerReadFasta() {
   char fileName[200];
   KI_FARMER_UNPACK(KI_STRING, fileName);
-  
+
   long long nSeqs = kiReadFastaParallel(fileName);
-  
+
   KI_FARMER_PACK(KI_LONG_LONG, &nSeqs);
 }
 
@@ -262,13 +262,13 @@ void kiUserReadFastaOrFastq(char* fileName, /*OUT*/long long* nSeqs) {
 int kiFarmerReadFastaOrFastq() {
   char fileName[200];
   KI_FARMER_UNPACK(KI_STRING, fileName);
-  
+
   long long nSeqs = 0;
-  if (kiIsFastq(fileName)) 
+  if (kiIsFastq(fileName))
     nSeqs = kiReadFastqParallel(fileName);
-  else 
+  else
     nSeqs = kiReadFastaParallel(fileName);
-    
+
   KI_FARMER_PACK(KI_LONG_LONG, &nSeqs);
 }
 
@@ -303,7 +303,7 @@ int kiFarmerGetMinMaxReadLen() {
   KI_Allreduce(&minLen, &globalMin, 1, MPI_INT, MPI_MIN, ki_cmm_domain);
   KI_Allreduce(&maxLen, &globalMax, 1, MPI_INT, MPI_MAX, ki_cmm_domain);
   /* kipmsg0(2, "Global read length: min = %d, max = %d\n", globalMin, globalMax); */
-  
+
   KI_FARMER_PACK(KI_INT, &globalMin, KI_INT, &globalMax);
 }
 
@@ -392,7 +392,7 @@ int kiFarmerProcessVarLenReads() {
   long long totalFiltered;
   KI_Allreduce(&nFiltered, &totalFiltered, 1, MPI_LONG_LONG_INT, MPI_SUM,  ki_cmm_domain);
   kipmsg0(2, "Short reads filtered = %ld\n", totalFiltered);
-  
+
   KI_Allreduce(&nSeqs, &nSeqsLeft, 1, MPI_LONG_LONG_INT, MPI_SUM,  ki_cmm_domain);
   KI_FARMER_PACK(KI_LONG_LONG, &nSeqsLeft);
 }
@@ -438,7 +438,7 @@ int kiFarmerGetKmer() {
   KI_FARMER_UNPACK(KI_STRING, kmer);
 
   int nSeqs = kiGetKmer(kmer);
-  
+
   KI_FARMER_PACK(KI_INT, &nSeqs);
 }
 
@@ -452,7 +452,7 @@ void kiUserDummyAssemble(char* outputName) {
 int kiFarmerDummyAssemble() {
   char outputName[200];
   KI_FARMER_UNPACK(KI_STRING, outputName);
-                  
+
   kiExactAssemble(outputName);
   return 0;
 }
@@ -472,10 +472,10 @@ int kiFarmerGetSeedSeq() {
     int value;
     int index;
   } in, out;
-  
+
   in.value = ki_seqs->nSeq - ki_nseq_processed;
   in.index = ki_domain_rank;
-  
+
   KI_Allreduce(&in, &out, 1, MPI_2INT, MPI_MAXLOC, ki_cmm_domain);
   int cpu   = out.index;
   int nLeft = out.value;
@@ -487,10 +487,10 @@ int kiFarmerGetSeedSeq() {
     kipmsg(4, "Seqs processed = %d / %d\n", ki_nseq_processed, ki_seqs->nSeq);
     kipmsg(5, "nLeft = %d\n", nLeft);
   }
-  
+
   if (ki_exeution_time > 0 && (int)(MPI_Wtime() - ki_time_beg) >= ki_exeution_time) {
     termStatus = KI_TERMINATION_TIME;
-  }  
+  }
   if (ki_read_depletion > 0 && 1.0 * ki_clock_count / ki_clock_total >= ki_read_depletion) {
     kipmsg(3, "deplete = %.3f\n", 1.0 * ki_clock_count / ki_clock_total);
     termStatus = KI_TERMINATION_DEPLETION;
@@ -536,7 +536,7 @@ int  kiFarmerSetTermination() {
 
   ki_exeution_time  = executionTime;
   ki_read_depletion = readDepletionFraction;
-  
+
   return 0;
 }
 
@@ -545,7 +545,7 @@ int  kiFarmerSetTermination() {
 /* Get overlapping sequences */
 /* sequences that match query[t..$], for t in [0, strlen(query) - minOverlap] */
 void kiUserGetOverlappingSeqs(char* query, int minOverlap, float maxMismatch, bool bErase,
-                              /*OUT*/alignment_t* aln) {  
+                              /*OUT*/alignment_t* aln) {
   KI_PACK_SEND_CMD(KI_CMD_GET_OVERLAPPING_SEQS,
                    KI_STRING, query,
                    KI_INT,    &minOverlap,
@@ -564,14 +564,14 @@ int kiFarmerGetOverlappingSeqs() {
   int   minOverlap;
   float maxMismatch;
   bool  bErase;
-  
+
   KI_FARMER_UNPACK(KI_STRING, query,
                    KI_INT,    &minOverlap,
                    KI_FLOAT,  &maxMismatch,
                    KI_BOOL,   &bErase);
 
   kipmsg0(5, "getOverlappingSeqs: query = '%s', minOverlap = %d, maxMismatch = %f\n", query, minOverlap, maxMismatch);
-  
+
   char* buf    = ki_tmp_buf;
   int   buflen = 0;
 
@@ -612,7 +612,7 @@ int kiFarmerGetOverlappingSeqs() {
       }
     }
   }
-  
+
   int totLen;
   KI_Gatherv_buffer(buf, buflen, ki_in_buf, KI_BUF_SIZE, 0, ki_cmm_domain, &totLen);
 
@@ -634,13 +634,13 @@ int kiFarmerGetOverlappingSeqsRaw() {
   char  query[KI_SEQ_BUF_SIZE];
   int   minOverlap;
   float maxMismatch;
-  
+
   KI_FARMER_UNPACK(KI_STRING, query,
                    KI_INT,    &minOverlap,
                    KI_FLOAT,  &maxMismatch);
 
   kipm0("getOverlappingSeqs: query = '%s', minOverlap = %d, maxMismatch = %f\n", query, minOverlap, maxMismatch);
-  
+
   hashtable_t* hash = ki_hash[ki_kmer_len];
   if (hash == NULL) {
     kipm("Hashtables not found for k = %d\n", ki_kmer_len);
@@ -695,7 +695,7 @@ int kiFarmerGetOverlappingSeqsRaw() {
 /* Get overlapping sequences */
 /* sequences that match q_i (q_i = query[i..i+minOverlap-1]) for any i in [0..strlen(query)-minOverlap] */
 void kiUserGetPrefixSeqs(char* query, int minOverlap, float maxMismatch, bool bErase,
-                              /*OUT*/alignment_t* aln) {  
+                              /*OUT*/alignment_t* aln) {
   KI_PACK_SEND_CMD(KI_CMD_GET_PREFIX_SEQS,
                    KI_STRING, query,
                    KI_INT,    &minOverlap,
@@ -714,7 +714,7 @@ int kiFarmerGetPrefixSeqs() {
   int   minOverlap;
   float maxMismatch;
   bool  bErase;
-  
+
   KI_FARMER_UNPACK(KI_STRING, query,
                    KI_INT,    &minOverlap,
                    KI_FLOAT,  &maxMismatch,
@@ -724,7 +724,7 @@ int kiFarmerGetPrefixSeqs() {
 
   char* buf    = ki_tmp_buf;
   int   buflen = 0;
-  
+
   hashtable_t* hash = ki_hash[ki_kmer_len];
   if (hash == NULL) {
     if (ki_seqs->nSeq > 0) {
@@ -739,7 +739,7 @@ int kiFarmerGetPrefixSeqs() {
     int   qlen  = strlen(query);
     float diff;
     int   i;
-  
+
     for (i = 0; i < qlen - minOverlap; ++i) {
       memcpy(kmer, query+i, ki_kmer_len);
       kmer[ki_kmer_len] = '\0';
@@ -760,7 +760,7 @@ int kiFarmerGetPrefixSeqs() {
       }
     }
   }
-  
+
   int totLen;
   KI_Gatherv_buffer(buf, buflen, ki_in_buf, KI_BUF_SIZE, 0, ki_cmm_domain, &totLen);
 
@@ -781,12 +781,12 @@ void kiUserSearchProfile(char* profileName, float cutoff, /*OUT*/alignment_t* hi
 int  kiFarmerSearchProfile() {
   char profileName[200];
   float cutoff;
-  
+
   KI_FARMER_UNPACK(KI_STRING, profileName,
                    KI_FLOAT,  &cutoff);
 
   ki_hash_mode = KI_HASH_COMPLETE;
-  
+
   /* load profile */
   int startingIndex = ki_seqs->nSeq;
   int nProfileSeqs = kiReadFastaShared(profileName, ki_seqs);
@@ -810,7 +810,7 @@ int  kiFarmerSearchProfile() {
   hashtable_t* hash = ki_hash[ki_kmer_len];
   char kmer[KI_SEQ_BUF_SIZE];
   kmer[ki_kmer_len] = '\0';
-  
+
   /* search in sequences */
   char aa[KI_SEQ_BUF_SIZE];
   int frame;
@@ -854,11 +854,11 @@ int  kiFarmerSearchProfile() {
   KI_File_close(&fh3);
 
   kifree(match, sizeof(char) * KI_SEQ_BUF_SIZE);
-  
+
   /* gather hits alignment in ki_in_buf */
   int totLen = 0;
   /* kiFreeAlignment(profile); */
-  
+
   KI_FARMER_PACK(KI_V_CHAR, totLen, ki_in_buf);
 }
 
@@ -866,7 +866,7 @@ void kiUserRAIphyOriginal(char* dbName, char* binName) {
   KI_PACK_SEND_CMD(KI_CMD_RAIPHY_ORIGINAL,
                    KI_STRING, dbName,
                    KI_STRING, binName);
-  
+
   KI_RECV_UNPACK_CMD_BARE();
 }
 
@@ -883,13 +883,13 @@ int  kiFarmerRAIphyOriginal() {
     fprintf(stderr, "Could not open output file.\n");
     kiAbort(-1);
   }
-  
+
   int bufSize = 1024*1024;
   char buf[bufSize];
   char* bufTop = buf;
   MPI_Status status;
   size_t elements;
-  
+
   rai_db_t* db = NULL;
   db = loadDatabase(dbName);
 
@@ -898,7 +898,7 @@ int  kiFarmerRAIphyOriginal() {
 
   for (i = 0; i < ki_seqs->nSeq; ++i) {
     margin = 0.;
-    class = classifySequenceOriginal(ki_seqs->seqs[i], db, &margin); 
+    class = classifySequenceOriginal(ki_seqs->seqs[i], db, &margin);
     sprintf(bufTop, ">%s\n%s\n", ki_seqs->names[i], db->names[class]);
     bufTop += strlen(bufTop);
     if (bufTop-buf > bufSize/2) {
@@ -925,7 +925,7 @@ void kiUserStoreState(char* filePrefix, /*OUT*/long long* nProcessed) {
 int  kiFarmerStoreState() {
   char filePrefix[KI_NAME_BUF_SIZE];
   long long nProcessed;
-  
+
   KI_FARMER_UNPACK(KI_STRING, filePrefix);
 
   nProcessed = kiStoreState(filePrefix);
@@ -943,7 +943,7 @@ int  kiFarmerRestoreState() {
   long long nProcessed;
 
   KI_FARMER_UNPACK(KI_STRING, filePrefix);
-  
+
   nProcessed = kiRestoreState(filePrefix);
 
   KI_FARMER_PACK(KI_LONG_LONG, &nProcessed);
@@ -953,7 +953,7 @@ int  kiFarmerRestoreState() {
 /* System functions */
 void kiInit(int* argc, char** argv[]) {
   MPI_Init(argc, argv);
-  
+
   ki_time_beg = MPI_Wtime();
 
   /* create a private world for KI */
@@ -972,24 +972,24 @@ void kiInit(int* argc, char** argv[]) {
   kiProcessArgs(argc, argv);    /* may override pmLevel */
 
   kiRegisterCommands();
-  
+
   pmsg(4, "Hello world. I am %d of %d\n", ki_world_rank, ki_world_size);
-  
+
   if (kiIsParallel()) kiDomainInit();
   else {
     MPI_Comm_dup(MPI_COMM_WORLD, &ki_cmm_domain);
     ki_domain_size = 1;
     ki_domain_rank = 0;
   }
-  
+
   kiDataInit();
 }
 
 void kiPrintLocalMemoryUsage() {
   long used = kiGetMallocUsed();
-  
+
   char* locale = setlocale(LC_NUMERIC, "en_US.utf-8");
-  
+
   if (locale) {
     kipmsg0(3, "Local memory used = %'ld KB\n", used >> 10);
   } else {
@@ -1004,13 +1004,13 @@ void kiFinalize() {
   long totalUsed = 0;
 
   char* locale = setlocale(LC_NUMERIC, "en_US.utf-8");
-  
+
   if (locale) {
     kipmsg0(3, "Local memory used = %'ld KB\n", used >> 10);
   } else {
     kipmsg0(3, "Local memory used = %ld KB\n", used >> 10);
   }
-    
+
   KI_Allreduce(&used, &totalUsed, 1, MPI_LONG, MPI_SUM, ki_cmm_world);
   if (ki_world_rank == 0) {
     if (locale) {
@@ -1042,7 +1042,7 @@ void kiFinalize() {
 #endif
 
   kiDataFinalize();
-  
+
   if (kiIsParallel()) kiDomainFinalize();
   else MPI_Comm_free(&ki_cmm_domain);
 
@@ -1057,7 +1057,7 @@ void kiFinalize() {
       kipmsg(3, "Local memory unfreed = %'ld B\n", used);
     }
   }
-  
+
   KI_Allreduce(&used, &totalUsed, 1, MPI_LONG, MPI_SUM, ki_cmm_world);
   if (ki_world_rank == 0) {
     if (locale) {
@@ -1066,11 +1066,11 @@ void kiFinalize() {
       pm("World memory leak = %ld bytes\n", totalUsed);
     }
   }
-  
+
   ki_time_end = MPI_Wtime();
   char timeStr[100];
   kiTimeToString(ki_time_end - ki_time_beg, timeStr);
-  
+
   if (ki_world_rank == 0) kipmsg(1, "Time elapsed = %s\n", timeStr);
 
   MPI_Group_free(&ki_grp_world);
@@ -1118,7 +1118,7 @@ void kiDomainInit() {
   int sumNodes[4] = {0};
   int* ranks[3];
   int i, j;
-  
+
   assert(ki_world_size >= 3);
   /* if (ki_world_size >= 8) { */
   /*   ratio[0] = 0.1; */
@@ -1131,7 +1131,7 @@ void kiDomainInit() {
     ratio[1] = ki_user_ratio;
     ratio[2] = 1 - ki_user_ratio * 2;
   }
-  
+
   for (i = 0; i < 3; ++i) {
     nNodes[i] = (i < 2) ? MAX(1, (int)(ki_world_size * ratio[i]))
       : ki_world_size - sumNodes[i];
@@ -1208,7 +1208,7 @@ void kiDomainFinalize() {
 
   if (ki_cmm_user_dealer != MPI_COMM_NULL) MPI_Comm_free(&ki_cmm_user_dealer);
   if (ki_cmm_dealer_farmer != MPI_COMM_NULL) MPI_Comm_free(&ki_cmm_dealer_farmer);
-  
+
   MPI_Group_free(&ki_grp_user_dealer);
   MPI_Group_free(&ki_grp_dealer_farmer);
 
@@ -1253,13 +1253,13 @@ void kiDealerStart() {
   MPI_Status status;
   char timestr[50];
   double time, wait;
-  
+
   while (true) {
     int pos = 0;
     int cmd = 0;
     int cnt = 0;
     int src = 0;
-    
+
     getCurrentTime(timestr);
     kipmsg(3, "[%s] Expecting cmd from user\n", timestr);
 
@@ -1269,10 +1269,10 @@ void kiDealerStart() {
     src = status.MPI_SOURCE;
     getCurrentTime(timestr);
     time = MPI_Wtime();
-    
+
     MPI_Unpack(ki_in_buf, KI_BUF_SIZE, &pos, &cmd, 1, MPI_INT, ki_cmm_world);
     kipmsg(3, "[%s] Received cmd = %d from %d\n", timestr, cmd, src);
-    
+
     /* only top dealer sends STOP signal to top farmer */
     if (cmd != KI_CMD_STOP || ki_domain_rank == 0)
       KI_Send(ki_in_buf, cnt, MPI_PACKED, ki_top_farmer, 0, ki_cmm_dealer_farmer);
@@ -1297,7 +1297,7 @@ void kiDealerStart() {
 
 void kiFarmerStart() {
   MPI_Status status;
-  
+
   while (true) {
     int pos = 0;
     int cmd = 0;
@@ -1309,15 +1309,15 @@ void kiFarmerStart() {
       MPI_Get_count(&status, MPI_PACKED, &cnt);
       src = status.MPI_SOURCE;
     }
-    
+
     KI_Bcast(&cnt, 1, MPI_INT, 0, ki_cmm_domain);
     KI_Bcast(ki_in_buf, cnt, MPI_PACKED, 0, ki_cmm_domain);
 
     MPI_Unpack(ki_in_buf, KI_BUF_SIZE, &pos, &cmd, 1, MPI_INT, ki_cmm_world);
-  
+
     pos = kiRunCommand(cmd);
     if (pos < 0) break;         /* KI_CMD_STOP */
-    
+
     if (kiIsDomainRoot())
       KI_Send(ki_out_buf, pos, MPI_PACKED, src, 0, ki_cmm_dealer_farmer);
   }
@@ -1336,7 +1336,7 @@ void kiProcessArgs(int* argc, char** argv[]) {
   for (i = 0; i < *argc; ++i) {
     if (ki_world_rank == 0) pmsg(3, "argv[%d] = '%s'\n", i, (*argv)[i]);
     if (strcmp((*argv)[i], "-v") == 0) { /* set debug output level based on command line */
-      int pmLevel = 3;                   
+      int pmLevel = 3;
       ++i;
       if ((i < *argc) && strlen((*argv)[i]) == 1 && (*argv)[i][0] >= '0' && (*argv)[i][0] <= '9') {
         pmLevel = (*argv)[i][0] - '0';
@@ -1370,7 +1370,7 @@ int kiRunCommand(int cmd) {
   int outputSize = 0;
   ki_func_t func = ki_functions[cmd];
   if (func == NULL) {
-    if (kiIsDomainRoot()) 
+    if (kiIsDomainRoot())
       fprintf(stderr, "Error: command %d not registered.\n", cmd);
   } else {
     outputSize = (*func)();
@@ -1471,11 +1471,11 @@ void kiUnpackArgs(void* buf, int bufSize, int* position, /*OUT*/...) {
   va_start(vl, position);
   while ((type = va_arg(vl, int)) != KI_UNDEF) {
     if (type == KI_STRING) {
-      MPI_Unpack(buf, bufSize, position, &count, 1, MPI_INT, ki_cmm_world);      
+      MPI_Unpack(buf, bufSize, position, &count, 1, MPI_INT, ki_cmm_world);
       type = MPI_CHAR;
     } else if ((type & KI_VECTOR) == KI_VECTOR) {
       argcount = va_arg(vl, int*);
-      MPI_Unpack(buf, bufSize, position, argcount, 1, MPI_INT, ki_cmm_world);      
+      MPI_Unpack(buf, bufSize, position, argcount, 1, MPI_INT, ki_cmm_world);
       count = *argcount;
       type ^= KI_VECTOR;        /* convert to MPI_Datatype */
     } else {
@@ -1501,7 +1501,7 @@ int_array_set_t* kiFreeIntArraySet(int_array_set_t* set) {
     kiArenaClear(KI_ARENA_TEMP);
     return NULL;
   }
-    
+
   if (set->size > 0) {
     assert(set->array);
     kifree(set->array, sizeof(bool) * set->size);
@@ -1565,7 +1565,7 @@ void kiFreeHashtables() {
   int i;
   for (i = 0; i <= KI_MAX_KMER_LEN; ++i) {
     ki_hash[i] = kiFreeHashtable(ki_hash[i]); /* returns NULL */
-  } 
+  }
   ki_hash = kifree(ki_hash, (sizeof(hashtable_t) * (KI_MAX_KMER_LEN+1)));
 }
 
@@ -1581,7 +1581,7 @@ void kiHashtableLoadSeq(int id) {
   if (ki_hash_mode != KI_HASH_NONE) {
     char* seq = ki_seqs->seqs[id];
     int i,len = strlen(seq);
-    char *p, *q; 
+    char *p, *q;
     if (ki_hash[ki_kmer_len]->bProtein) {
       if (ki_hash_mode == KI_HASH_COMPLETE) {
         for (i = 0, p = seq; i+ki_kmer_len <= len; ++i, p++) {
@@ -1592,7 +1592,7 @@ void kiHashtableLoadSeq(int id) {
       }
     } else {
       if (strchr(seq, 'N') != NULL) return;
-      char* comp = (char*)kiArenaMalloc(KI_ARENA_FARMER, len + 1); 
+      char* comp = (char*)kiArenaMalloc(KI_ARENA_FARMER, len + 1);
       kiReverseComplementSeq(seq, comp);
       pmsg(5, "seq  = %s\ncomp = %s\n", seq, comp);
 
@@ -1645,7 +1645,7 @@ void kiHashtableLoadAllSeqsMinLength() {
   kipmsg0(2, "Global read length: min = %d, max = %\n", globalMin, globalMax);
 
   ki_seqs->nPos = globalMin;
-  
+
   p = ki_seqs->seqs;
   for (i = 0; i < ki_seqs->nSeq; ++i, ++p) {
     if (ki_seqs->flags[i] != KI_SEQ_NEW) continue;
@@ -1658,7 +1658,7 @@ void kiHashtableLoadAllSeqsMinLength() {
   kiArenaClear(KI_ARENA_FARMER);
 
   KI_Barrier(ki_cmm_domain);
-  
+
   double time = MPI_Wtime() - timeStart;
   char timeStr[100];
   kiTimeToString(time, timeStr);
@@ -1668,9 +1668,9 @@ void kiHashtableLoadAllSeqsMinLength() {
 
   long used2 = kiGetMallocUsed();
   long used0 = kiGetHashTableMemory();
-  long used  = used2 - used1 - used0;  
+  long used  = used2 - used1 - used0;
   kipmsg0(3, "Extra local memory for loading seqs to hash = %ld MB\n", used >> 20);
-  
+
   float hashSizePerSeq  = (float)used / ki_seqs->nSeq;
   float hashSizePerBase = (float)hashSizePerSeq / ki_seqs->nPos;
   kipmsg0(2, "Memory for sequences in hash = %.1f bytes / seq, %.1f bytes / base\n", hashSizePerSeq, hashSizePerBase);
@@ -1704,7 +1704,7 @@ void kiHashtableLoadAllSeqsFixedLength() {
   /* kipmsg0(2, "Global read length: min = %d, max = %d\n", globalMin, globalMax); */
 
   ki_seqs->nPos = globalMin;
-  
+
   p = ki_seqs->seqs;
   for (i = 0; i < ki_seqs->nSeq; ++i, ++p) {
     if (ki_seqs->flags[i] != KI_SEQ_NEW) continue;
@@ -1717,7 +1717,7 @@ void kiHashtableLoadAllSeqsFixedLength() {
   kiArenaClear(KI_ARENA_FARMER);
 
   KI_Barrier(ki_cmm_domain);
-  
+
   double time = MPI_Wtime() - timeStart;
   char timeStr[100];
   kiTimeToString(time, timeStr);
@@ -1727,9 +1727,9 @@ void kiHashtableLoadAllSeqsFixedLength() {
 
   long used2 = kiGetMallocUsed();
   long used0 = kiGetHashTableMemory();
-  long used  = used2 - used1 - used0;  
+  long used  = used2 - used1 - used0;
   kipmsg0(3, "Extra local memory for loading seqs to hash = %ld MB\n", used >> 20);
-  
+
   float hashSizePerSeq  = (float)used / ki_seqs->nSeq;
   float hashSizePerBase = (float)hashSizePerSeq / ki_seqs->nPos;
   kipmsg0(2, "Memory for sequences in hash = %.1f bytes / seq, %.1f bytes / base\n", hashSizePerSeq, hashSizePerBase);
@@ -1766,7 +1766,7 @@ void kiReportProgress(int name, char* info, long long count, long long total, in
   if (!kiIsDomainRoot()) return;
   /* kipm("ki_clock_start = %f, ki_clock_stop = %f, ki_clock_interval = %f\n", ki_clock_start, ki_clock_stop, ki_clock_interval); */
   /* kipm("ki_clock_count = %d, ki_clock_total = %d\n", ki_clock_count, ki_clock_total); */
-  
+
   char eol = interval < 10 ? '\r' : '\n';
   double now = MPI_Wtime();
   char timeStr[100];
@@ -1789,9 +1789,9 @@ void kiReportProgress(int name, char* info, long long count, long long total, in
 
 void kiReportRootProgress(int name, char* info, int count, int total, int interval) {
   if (!kiIsDomainRoot()) return;
-  
+
   if (ki_clock_total < 0) return;
-  
+
   if (ki_clock_start < 0 || name != ki_clock_name) {
     ki_clock_start    = MPI_Wtime();
     ki_clock_stop     = ki_clock_start;
@@ -1802,7 +1802,7 @@ void kiReportRootProgress(int name, char* info, int count, int total, int interv
 
   ki_clock_total = total;
   ki_clock_count = count;
-  
+
   char eol = interval < 10 ? '\r' : '\n';
   double now = MPI_Wtime();
   char timeStr[100];
@@ -1845,7 +1845,7 @@ void kiExactAssembleOld() {
   int totalSeq = 0;
   KI_Allreduce(&(ki_seqs->nSeq), &totalSeq, 1, MPI_INT, MPI_SUM, ki_cmm_domain);
   pm0("totalSeq = %d\n", totalSeq);
-  
+
   bool* seqFlags = kimalloc(sizeof(bool) * ki_seqs->nSeq);
   memset(seqFlags, 0, sizeof(bool) * ki_seqs->nSeq);
 
@@ -1855,7 +1855,7 @@ void kiExactAssembleOld() {
   memset(kmer, 0, sizeof(char) * (ki_kmer_len+1));
 
   hashtable_t* seenH = kiMakeHashtable(NULL, 0, 8000, /*copy*/true, /*protein*/false);
-  
+
   int i, j;
   int totalConsidered = 0;
   int cpu  = 0;
@@ -1876,18 +1876,18 @@ void kiExactAssembleOld() {
       KI_Bcast(seq, KI_SEQ_BUF_SIZE, MPI_CHAR, cpu, ki_cmm_domain);
       len = strlen(seq);
       /* kipm0("seq='%s'\n", seq); */
-      
+
       hashtable_t* hash = ki_hash[ki_kmer_len];
       if (hash == NULL) {
         kipm("Hashtables not found for k = %d\n", len);
         return;
       }
-      
+
       kiClearHashtable(seenH);
 
       for (i = 1; i+ki_kmer_len <= len && len < KI_SEQ_BUF_SIZE-ki_kmer_len; ++i) {
         memcpy(kmer, seq+i, ki_kmer_len);
-        
+
         hashiterator_t hi;
         hi = kiFindMatch(seenH, kmer);
         if (kiHashCount(seenH, hi) > 0) break; /* avoid loops */
@@ -1920,8 +1920,8 @@ void kiExactAssembleOld() {
 
       /* if (len > 500) kipmsg(2, "local contig = %s\n", seq); */
       if (len > 1000) kipmsg(2, "local contig len = %d\n", strlen(seq));
-      
-      
+
+
 
       if (cpu == ki_domain_rank)
         seqFlags[si] = true;
@@ -1931,7 +1931,7 @@ void kiExactAssembleOld() {
   pm0("totalConsidered = %d\n", totalConsidered);
 
   kiFreeHashtable(seenH);
-  
+
   kifree(kmer, sizeof(char) * (ki_kmer_len+1));
   kifree(match, sizeof(char) * KI_SEQ_BUF_SIZE);
   kifree(seq, sizeof(char) * KI_SEQ_BUF_SIZE);
@@ -1941,13 +1941,13 @@ void kiExactAssembleOld() {
 
 void kiExtendSeqOld(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*/int* advance, int* leader) {
 /* advance: advancement in number of chars;
-   leader:  rank of node that achieved greatest advancement */  
+   leader:  rank of node that achieved greatest advancement */
   int len = strlen(seq) + 1;
   KI_Bcast(&len, 1, MPI_INT, root, ki_cmm_domain);
   KI_Bcast(seq, len, MPI_CHAR, root, ki_cmm_domain);
   int oldLen = len = len - 1;
   /* kipm("len = %d\n", len); */
-  
+
   hashtable_t* hash = ki_hash[ki_kmer_len];
   if (hash == NULL) {
     kipm("Hashtables not found for k = %d\n", len);
@@ -1967,9 +1967,9 @@ void kiExtendSeqOld(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*
     memcpy(kmer, p, ki_kmer_len);
     kiHashtableAdd(seenH, kmer, 0); /* any seqid >= 0  */
   }
-  for (; i+ki_kmer_len <= len && len < sz-ki_kmer_len-1; ++i) { 
+  for (; i+ki_kmer_len <= len && len < sz-ki_kmer_len-1; ++i) {
     memcpy(kmer, seq+i, ki_kmer_len);
-        
+
     hi = kiFindMatch(seenH, kmer);
     if (kiHashCount(seenH, hi) > 0) break; /* avoid loops */
     kiHashtableAdd(seenH, kmer, 0);
@@ -2000,7 +2000,7 @@ void kiExtendSeqOld(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*
   }
 
   kiFreeHashtable(seenH);
-  
+
   kifree(kmer,  sizeof(char) * (ki_kmer_len+1));
   kifree(match, sizeof(char) * KI_SEQ_BUF_SIZE);
 
@@ -2011,10 +2011,10 @@ void kiExtendSeqOld(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*
     int value;
     int index;
   } in, out;
-  
+
   in.value = len - oldLen;
   in.index = ki_domain_rank;
-  
+
   KI_Allreduce(&in, &out, 1, MPI_2INT, MPI_MAXLOC, ki_cmm_domain);
   *advance = out.value;
   *leader  = out.index;
@@ -2023,13 +2023,13 @@ void kiExtendSeqOld(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*
 
 void kiExtendSeq(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*/int* advance, int* leader) {
 /* advance: advancement in number of chars;
-   leader:  rank of node that achieved greatest advancement */  
+   leader:  rank of node that achieved greatest advancement */
   int len = strlen(seq) + 1;
   KI_Bcast(&len, 1, MPI_INT, root, ki_cmm_domain);
   KI_Bcast(seq, len, MPI_CHAR, root, ki_cmm_domain);
   int oldLen = len = len - 1;
   /* kipm("len = %d\n", len); */
-  
+
   hashtable_t* hash = ki_hash[ki_kmer_len];
   if (hash == NULL) {
     kipm("Hashtables not found for k = %d\n", len);
@@ -2060,14 +2060,14 @@ void kiExtendSeq(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*/in
     kiHashtableAdd(seenH, kmer, 0); /* any seqid >= 0  */
   }
 
-  for (; i+ki_kmer_len <= len && len-oldLen < hashSize/2 && len < sz-ki_kmer_len-1; ++i) { 
+  for (; i+ki_kmer_len <= len && len-oldLen < hashSize/2 && len < sz-ki_kmer_len-1; ++i) {
     /* kipm("i=%d\n", i); */
     memcpy(kmer, seq+i, ki_kmer_len);
-     
+
     hi = kiFindMatch(seenH, kmer);
     if (kiHashCount(seenH, hi) > 0) break; /* avoid loops */
     kiHashtableAdd(seenH, kmer, 0);
- 
+
     /* kipm0("kmer='%s'\n", kmer); */
     hi = kiFindMatch(hash, kmer);
     int nMatches = kiHashCount(hash, hi);
@@ -2096,7 +2096,7 @@ void kiExtendSeq(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*/in
   }
 
   kiFreeHashtable(seenH);
-  
+
   kifree(kmer,  sizeof(char) * (ki_kmer_len+1));
   kifree(match, sizeof(char) * KI_SEQ_BUF_SIZE);
 
@@ -2107,10 +2107,10 @@ void kiExtendSeq(/*IN/OUT*/char* seq, /*IN*/int sz, int beg, int root, /*OUT*/in
     int value;
     int index;
   } in, out;
-  
+
   in.value = len - oldLen;
   in.index = ki_domain_rank;
-  
+
   KI_Allreduce(&in, &out, 1, MPI_2INT, MPI_MAXLOC, ki_cmm_domain);
   *advance = out.value;
   *leader  = out.index;
@@ -2131,7 +2131,7 @@ void kiExactAssemble(char* outputName) {
   fp2 = fopen(contigFile2, "w");
   fp3 = fopen(contigFile3, "w");
 
-  if (fp1 == NULL || fp2 == NULL || fp3 == NULL) 
+  if (fp1 == NULL || fp2 == NULL || fp3 == NULL)
     fprintf(stderr, "Error: cannot write to output contig file\n");
 
   char seqName[200];
@@ -2142,7 +2142,7 @@ void kiExactAssemble(char* outputName) {
 
   double time0 = MPI_Wtime();
   double time;
-  
+
   char* seq = kimalloc(sizeof(char) * KI_CONTIG_SIZE);
 
   int totalConsidered = 0;
@@ -2173,7 +2173,7 @@ void kiExactAssemble(char* outputName) {
       }
       /* kipm0("+ beg = %d, advance = %d, seqlen = %d\n", beg, advance, strlen(seq)); */
       /* kipm0("seq+  = %s\n", seq); */
-      
+
       /* kiAbort(1); */
 
       int len = strlen(seq);
@@ -2182,7 +2182,7 @@ void kiExactAssemble(char* outputName) {
       kiReverseComplementSeq(copy, seq);
       kifree(copy, len+1);
       /* kipm0("seq-  = %s\n", seq); */
-      
+
       advance = -1;
       leader = 0;
       beg = beg;
@@ -2195,7 +2195,7 @@ void kiExactAssemble(char* outputName) {
       }
       /* kipm0("- beg = %d, advance = %d, seqlen = %d\n", beg, advance, strlen(seq)); */
       /* kipm0("seq-- = %s\n\n", seq); */
-      
+
 
       /* /\* if (len > 500) kipmsg(2, "local contig = %s\n", seq); *\/ */
       /* if (len > 1000) kipmsg(2, "local contig len = %d\n", strlen(seq)); */
@@ -2214,7 +2214,7 @@ void kiExactAssemble(char* outputName) {
         time = MPI_Wtime() - time0;
         pm0("Expanded %d seqs in %.0f seconds (%.1f seq/s)\n", totalConsidered, time, totalConsidered/time);
       }
-      
+
       if (cpu == ki_domain_rank)
         ki_seqs->flags[si] = KI_SEQ_USED;
     }
@@ -2268,7 +2268,7 @@ int kiReadFastaString(char* buf, alignment_t* seqs) {
       }
     }
     *q = '\0';
-        
+
     name = (char*)kiArenaMemdup(KI_ARENA_DEFAULT, pp, p-pp+1); /* TODO: consider using a dedicated arena? */
     seq  = (char*)kiArenaMemdup(KI_ARENA_DEFAULT, readBuf, q-readBuf+1);
 
@@ -2281,9 +2281,9 @@ int kiReadFastaString(char* buf, alignment_t* seqs) {
     pp = qq;
     assert(*pp == '\0' || *pp == '>');
   }
-  
+
   return nSeqs;
-  
+
 }
 
 int kiReadFastaShared(char* fileName, alignment_t* seqs) {
@@ -2336,9 +2336,9 @@ long long kiReadFastqParallel(char* fileName) {
   MPI_Offset beg;
   MPI_Status status;
   size_t elements;
-  
+
   int rc;
-  char* buf;  
+  char* buf;
   /* char* nameStop   = "(),: \t\r\n"; */
   char* nameStop   = " ,\t\r\n";
   char *name, *seq;
@@ -2364,7 +2364,7 @@ long long kiReadFastqParallel(char* fileName) {
     chunk = fileSize - beg;
 
   kipmsg(5, "Reading %ld: %ld in rank %ld of %ld\n", beg, chunk, ki_domain_rank, ki_domain_size);
-  
+
   MPI_Offset maxEntrySize = 800;
   MPI_Offset bytesToRead  = MIN(chunk + maxEntrySize, fileSize - beg);
   MPI_Offset bufSize      = MIN(bytesToRead, KI_BUF_SIZE-1);
@@ -2416,7 +2416,7 @@ long long kiReadFastqParallel(char* fileName) {
         ++pp;
 
         /* move qq to start of seq */
-        qq = pp+1;              
+        qq = pp+1;
         while (*qq != '\r' && *qq != '\n') ++qq;
         *qq = '\0';
         while (!((*qq >= 'a' && *qq <= 'z') || (*qq >= 'A' && *qq <= 'Z'))) ++qq;
@@ -2429,13 +2429,13 @@ long long kiReadFastqParallel(char* fileName) {
               break;
             }
           }
-          if (*p == '\0') break; 
+          if (*p == '\0') break;
         }
 
         /* handles multiline fasta */
         for (q = qq; *q != '\r' && *q != '\n'; ++q);
         *q = '\0';
-        
+
         name = (char*)kiArenaMemdup(KI_ARENA_SEQS, pp, p-pp+1);
         seq  = (char*)kiArenaMemdup(KI_ARENA_SEQS, qq, q-qq+1);
 
@@ -2463,7 +2463,7 @@ long long kiReadFastqParallel(char* fileName) {
           if (*p == '\r' || *p == '\n') neol++;
           ++p;
         }
-        
+
         if (p > pos+count) {
           moveSize = pos+count - pp;
           memcpy(buf, pp, moveSize);
@@ -2476,7 +2476,7 @@ long long kiReadFastqParallel(char* fileName) {
     }
   }
   kifree(buf, KI_BUF_SIZE);
-  
+
   KI_File_close(&fh);
 
   int i;
@@ -2500,9 +2500,9 @@ long long kiReadFastaParallel(char* fileName) {
   MPI_Offset beg;
   MPI_Status status;
   size_t elements;
-  
+
   int rc;
-  char* buf;  
+  char* buf;
   /* char* nameStop   = "(),: \t\r\n"; */
   char* nameStop   = " ,\t\r\n";
   char *name, *seq;
@@ -2528,8 +2528,8 @@ long long kiReadFastaParallel(char* fileName) {
     chunk = fileSize - beg;
 
   kipmsg(6, "Reading %ld: %ld\n", beg, chunk);
-  
-  int   maxEntrySize = 800; 
+
+  int   maxEntrySize = 800;
   long  bytesToRead  = MIN(chunk + maxEntrySize, fileSize - beg);
   int   bufSize      = MIN(bytesToRead, KI_BUF_SIZE-1);
   char* pos          = buf;
@@ -2560,7 +2560,7 @@ long long kiReadFastaParallel(char* fileName) {
         ++pp;
 
         /* move qq to start of seq */
-        qq = pp+1;              
+        qq = pp+1;
         while (*qq != '\r' && *qq != '\n') ++qq;
         *qq = '\0';
         while (!((*qq >= 'a' && *qq <= 'z') || (*qq >= 'A' && *qq <= 'Z'))) ++qq;
@@ -2573,7 +2573,7 @@ long long kiReadFastaParallel(char* fileName) {
               break;
             }
           }
-          if (*p == '\0') break; 
+          if (*p == '\0') break;
         }
 
         /* handles multiline fasta */
@@ -2588,7 +2588,7 @@ long long kiReadFastaParallel(char* fileName) {
           while (*qq != '>') ++qq;
         }
         *q = '\0';
-        
+
         name = (char*)kiArenaMemdup(KI_ARENA_SEQS, pp, p-pp+1);
         seq  = (char*)kiArenaMemdup(KI_ARENA_SEQS, readBuf, q-readBuf+1);
 
@@ -2621,7 +2621,7 @@ long long kiReadFastaParallel(char* fileName) {
     }
   }
   kifree(buf, KI_BUF_SIZE);
-  
+
   KI_File_close(&fh);
 
   int i;
@@ -2637,7 +2637,7 @@ long long kiReadFastaParallel(char* fileName) {
   kipmsg0(2, "All nodes: read %ld sequences from fasta (%s).\n", addedSum, timeStr);
 
   return addedSum;
-  
+
   /* http://kb.iu.edu/data/aqpe.html */
 }
 
@@ -2661,9 +2661,9 @@ long long kiReadFastaSemiParallel(char* fileName) {
 
   int minLen = -1;
   int maxLen = -1;
-  
+
   double timeStart = MPI_Wtime();
-  
+
   if (kiIsDomainRoot()) {
     fp = fopen(fileName, "r");
     if (fp == NULL) {
@@ -2674,7 +2674,7 @@ long long kiReadFastaSemiParallel(char* fileName) {
       fprintf(stderr, "Error: reading header line\n");
       kiAbort(1);
     }
-    qq = buf + (strlen(buf) + 1); 
+    qq = buf + (strlen(buf) + 1);
   }
 
   while (more != 0) {
@@ -2687,14 +2687,14 @@ long long kiReadFastaSemiParallel(char* fileName) {
         }
         qq += (strlen(qq) + 1);
         bufSize = qq - buf;
-      } 
-      if (str == NULL) 
+      }
+      if (str == NULL)
         more = 0;
     }
     KI_Bcast(&bufSize, 1, MPI_INT, 0, ki_cmm_domain);
     kipmsg0(5, "bufSize = %d\n", bufSize);
     KI_Bcast(buf, bufSize, MPI_CHAR, 0, ki_cmm_domain);
-    kipmsg0(5, "buf = '%s'\n", buf);  
+    kipmsg0(5, "buf = '%s'\n", buf);
     KI_Bcast(&more, 1, MPI_INT, 0, ki_cmm_domain);
 
     pp = buf;
@@ -2721,7 +2721,7 @@ long long kiReadFastaSemiParallel(char* fileName) {
           /* allocate space for another sequence */
           nSeqsAdded++;
           kiAlignmentGrow(ki_seqs);
-          
+
           ki_seqs->names[ki_seqs->nSeq-1] = (char*)kimemdup(pp+1, p-pp); /* p-pp == strlen(pp) */
           ki_seqs->seqs[ki_seqs->nSeq-1]  = NULL;
           ki_seqs->flags[ki_seqs->nSeq-1] = KI_SEQ_NEW;
@@ -2729,7 +2729,7 @@ long long kiReadFastaSemiParallel(char* fileName) {
         }
       } else {
         if (kiIsMyTurn()) {
-          /* count non-space characters and append to sequence */          
+          /* count non-space characters and append to sequence */
           int nKeep = 0;
           char *p, *q;
           for (p = pp; *p != '\0'; p++) {
@@ -2765,7 +2765,7 @@ long long kiReadFastaSemiParallel(char* fileName) {
         }
       }
       pp = nextLine;
-    } 
+    }
     if (kiIsDomainRoot()) {
       if (more != 0) {
         bufSize = strlen(qq) + 1;
@@ -2782,7 +2782,7 @@ long long kiReadFastaSemiParallel(char* fileName) {
   }
 
   int i;
-  for (i = 0; i < ki_seqs->nSeq; i++) 
+  for (i = 0; i < ki_seqs->nSeq; i++)
     kiUpcaseSeq(ki_seqs->seqs[i]);
 
   double readTime = MPI_Wtime() - timeStart;
@@ -2800,7 +2800,7 @@ long long kiReadFastaSemiParallel(char* fileName) {
 ogvertex_t* kiAllocOgVertex() {
   if (KI_USE_ARENA)
     return (ogvertex_t*)kiArenaMalloc(KI_ARENA_DEFAULT, sizeof(ogvertex_t));
-    
+
   ogvertex_t* v = (ogvertex_t*)kimalloc(sizeof(ogvertex_t));
   v->occr   = 0;
   v->offset = 0;
@@ -2819,7 +2819,7 @@ ogvertex_t* kiAllocOgVertex() {
 ogedge_t* kiAllocOgEdge() {
   if (KI_USE_ARENA)
     return (ogedge_t*)kiArenaMalloc(KI_ARENA_DEFAULT, sizeof(ogedge_t));
-  
+
   ogedge_t* e = (ogedge_t*)kimalloc(sizeof(ogedge_t));
   e->ext      = NULL;
   e->v        = NULL;
@@ -2865,7 +2865,7 @@ int_list_t* kiAllocIntList(int val) {
 int_list_t* kiFreeIntList(int_list_t* list) {
   if (list == NULL) return NULL;
   if (KI_USE_ARENA) return NULL;
-  
+
   list->next = kiFreeIntList(list->next);
   kifree(list, sizeof(int_list_t));
   return NULL;
@@ -2904,7 +2904,7 @@ overlap_graph_t* kiFreeOverlapGraph(overlap_graph_t* g) {
     /* if (!KI_USE_ARENA) { */
       ogvertex_t** p;
       int i;
-      for (i = 0, p = g->vertices; i < g->nVertices; ++i, ++p) { 
+      for (i = 0, p = g->vertices; i < g->nVertices; ++i, ++p) {
         *p = kiFreeOgVertex(*p);
       }
     /* } */
@@ -2923,17 +2923,17 @@ void kiClearOverlapGraph(overlap_graph_t* g) {
   if (!KI_USE_ARENA) {
     ogvertex_t** p;
     int i;
-    for (i = 0, p = g->vertices; i < g->nVertices; ++i, ++p) { 
+    for (i = 0, p = g->vertices; i < g->nVertices; ++i, ++p) {
       *p = kiFreeOgVertex(*p);
     }
   } else {
     kiArenaClear(KI_ARENA_DEFAULT);
   }
-  
+
   memset(g->vertices, 0, sizeof(ogvertex_t*) * g->nSaved);
   memset(g->tailOffsetStarts, 0, sizeof(int_list_t*) * g->nSavedTailOffsets);
   memset(g->tailOffsetEnds,   0, sizeof(int_list_t*) * g->nSavedTailOffsets);
-  
+
   g->tailSorted = kiFreeIntList(g->tailSorted); /* frees tailOffsetStarts/Ends as well */
 
   g->seqLen        = 0;
@@ -2945,7 +2945,7 @@ void kiClearOverlapGraph(overlap_graph_t* g) {
 void kiOverlapGraphAppendVertex(overlap_graph_t* g, ogvertex_t* v) {
   kipmsg(7, "Adding new v: name = '%s'\n", v->name);
   if (v->id > 0) return;        /* v already in g */
-  
+
   int i;
   if (g->nSaved == 0) {
     g->seqLen = strlen(v->seq);
@@ -3029,16 +3029,16 @@ void kiOverlapGraphAppendVertex(overlap_graph_t* g, ogvertex_t* v) {
 void kiOverlapGraphExportDot(overlap_graph_t* g, char* filename, int step, char* postfix, bool big) {
   if (g->nVertices == 0) return;
   kipm("In kiOverlapGraphExportDot\n");
-  
+
 
   /* if (g->nVertices < 15) return; */
 
   char sstep[20] = "";
   if (postfix) sprintf(sstep, "-%d", step);
-  
+
   char dotname[200];
   sprintf(dotname, "%s%s%s.dot", filename, sstep, postfix ? postfix : "");
-  
+
   /* FILE* fp = stderr; */
   FILE* fp = fopen(dotname, "w");
   assert(fp);
@@ -3108,7 +3108,7 @@ void kiOverlapGraphExportDot(overlap_graph_t* g, char* filename, int step, char*
       }
     }
   }
-  
+
   /* rank */
   char rbuf[100000] = "";
   char* pr = rbuf;
@@ -3128,7 +3128,7 @@ void kiOverlapGraphExportDot(overlap_graph_t* g, char* filename, int step, char*
       }
     }
   }
-  
+
   char fbuf[100] = "fontname=Droid fontsize=16";
 
   fprintf(fp, "digraph G {\n");
@@ -3138,7 +3138,7 @@ void kiOverlapGraphExportDot(overlap_graph_t* g, char* filename, int step, char*
   fprintf(fp, "  edge [%s arrowsize=0.75];\n\n", fbuf);
   fprintf(fp, "%s\n%s\n%s", vbuf, rbuf, ebuf);
   fprintf(fp, "}\n");
-  
+
   fclose(fp);
 
   kipm("Out of kiOverlapGraphExportDot\n");
@@ -3181,14 +3181,14 @@ void kiOverlapGraphAdd(overlap_graph_t* g, char* name, char* seq, int offset, in
       int minOffset = MAX(baseOffset + offset - seqLen + g->minOverlap, 0);
       int offset = minOffset;
       /* the following has the problem of ignoring the intermediate nodes that with minOffset */
-      while (offset <= maxOffset && g->tailOffsetStarts[offset] == NULL) offset++; 
+      while (offset <= maxOffset && g->tailOffsetStarts[offset] == NULL) offset++;
       /* while (offset <= maxOffset && g->tailOffsetStarts[offset] == NULL) offset--; */
       kipmsg(6, "offset = %d\n", offset);
       if (offset > maxOffset || offset >= g->nSavedTailOffsets) {
         kipm("seqLen = %d, minOffset = %d, maxOffset = %d\n", seqLen, minOffset, maxOffset);
         kipm("offset = %d, baseOffset = %d, g->nSavedTailOffsets = %d, g->maxTailOffset = %d\n", offset, baseOffset, g->nSavedTailOffsets, g->maxTailOffset);
       }
-      
+
       assert(offset <= maxOffset);
       assert(offset < g->nSavedTailOffsets);
       assert(g->tailOffsetStarts[offset]);
@@ -3204,15 +3204,15 @@ void kiOverlapGraphAdd(overlap_graph_t* g, char* name, char* seq, int offset, in
 
         ogvertex_t* u = g->vertices[it->value];
 
-        if (u == v) break;     
+        if (u == v) break;
         if (u->offset > v->offset) break; /* past possible ancestors */
 
         kipmsg(6, "Consider potential ancestor of %s (%d) <-- %s (%d)\n", v->name, v->id, u->name, u->id);
 
         int d = v->offset - u->offset;
         int exlen = 0;
-        int iDiff = 0;            
-        
+        int iDiff = 0;
+
         float diff = kiSeqNCmpX(u->seq + d, v->seq, seqLen - d, &iDiff);
         kipmsg(7, "diff = %f\n", diff);
         float weight = 1. - diff;
@@ -3279,7 +3279,7 @@ void kiOverlapGraphAdd(overlap_graph_t* g, char* name, char* seq, int offset, in
               e1 = w->oes[kiBaseIndex(t[iDiff])];
               e1->weight += e->weight;
             }
-            
+
             w->flag = e->v->flag;
 
             e->ext = kiArenaStrndup(KI_ARENA_DEFAULT, t, iDiff);
@@ -3320,7 +3320,7 @@ void kiOverlapGraphAddMatches(overlap_graph_t* g, alignment_t* matches, int base
   char* swap;
   for (j = 0; j < matches->nSeq-1; ++j) {
     for (i = j+1; i < matches->nSeq; ++i) {
-      if (matches->flags[i] < matches->flags[j]) { 
+      if (matches->flags[i] < matches->flags[j]) {
           swap = matches->seqs[j];
           matches->seqs[j] = matches->seqs[i];
           matches->seqs[i] = swap;
@@ -3397,7 +3397,7 @@ void kiOverlapGraphExplore(overlap_graph_t* g, int vi, /*OUT*/char* adventure) {
           bestWeight = e->weight;
           bestEdge = e;
         }
-      }      
+      }
     }
     v->flag |= KI_OGV_EXTEND;
     if (bestEdge == NULL) break;
@@ -3423,7 +3423,7 @@ bool kiOverlapGraphExtend(overlap_graph_t* g, /*IN/OUT*/int* vi) {
           bestWeight = e->weight;
           bestEdge = e;
         }
-      }      
+      }
     }
     v->flag = KI_OGV_SOLID;
     if (v->name != NULL) *vi = v->id;
@@ -3490,7 +3490,7 @@ bool kiOverlapGraphTooBig(overlap_graph_t* g) {
   /*   ki_og_max_size = g->nVertices; */
   /*   kipmsg(2, "ki_og_max_size = %d\n", ki_og_max_size); */
   /* } */
-  
+
   return (g->nVertices >= KI_OG_MAX_SIZE || g->maxTailOffset >= KI_CONTIG_SIZE / 2 - 1000);
 }
 
@@ -3517,7 +3517,7 @@ void stateToTxtFile(char* filePrefix) {
 
 long long kiStoreState(char* filePrefix) {
   if (kiIsDomainRoot()) pm("\n");
-  
+
   char filename[KI_NAME_BUF_SIZE];
   sprintf(filename, "%s.store", filePrefix);
 
@@ -3526,12 +3526,12 @@ long long kiStoreState(char* filePrefix) {
   long long nProcessed;
   long long nLocal = ki_nseq_processed;
   KI_Reduce(&nLocal, &nProcessed, 1, MPI_LONG_LONG, MPI_SUM, 0, ki_cmm_domain);
-  
+
   int nSeq = ki_seqs->nSeq;
   int compactSize = kiCeilingDevidedBy(nSeq, 8); /* each seq flag is encoded in 1 bit, one additional int for nSeq */
-  size_t alignedSize = kiAlignedSize(compactSize + sizeof(int), 4); 
+  size_t alignedSize = kiAlignedSize(compactSize + sizeof(int), 4);
   kipmsg(3, "nSeq = %d, compactSize = %d, alignedSize = %d\n", nSeq, compactSize, alignedSize);
-  
+
   int *cnts = 0, *displs = 0;
   if (kiIsDomainRoot()) {
     cnts   = (int*)kiArenaMalloc(KI_ARENA_FARMER, sizeof(int) * ki_domain_size);
@@ -3546,7 +3546,7 @@ long long kiStoreState(char* filePrefix) {
   KI_File_open(filename, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
 
   if (kiIsDomainRoot()) {
-    int j, displsSum = (int)kiAlignedSize(sizeof(int)*(ki_domain_size+1), 4);    
+    int j, displsSum = (int)kiAlignedSize(sizeof(int)*(ki_domain_size+1), 4);
     for (j = 0; j < ki_domain_size; ++j) {
       displs[j] = displsSum;
       displsSum += cnts[j];
@@ -3595,20 +3595,20 @@ long long kiStoreState(char* filePrefix) {
 
   /* stateToTxtFile("txt.store"); */
   return nProcessed;
-  
+
 }
 
 long long kiRestoreState(char* filePrefix) {
-  char filename[KI_NAME_BUF_SIZE];  
+  char filename[KI_NAME_BUF_SIZE];
   sprintf(filename, "%s.store", filePrefix);
 
   if (!KI_File_exists(filename)) return 0;
-  
+
   KI_File fh;
   MPI_Status status;
   size_t elements;
   int rc;
-  
+
   rc = KI_File_open(filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
   if (rc != MPI_SUCCESS) {
     if (kiIsDomainRoot()) fprintf(stderr, "Error: unable to open file '%s'\n", filename);
@@ -3620,21 +3620,21 @@ long long kiRestoreState(char* filePrefix) {
     int nParts;
     displs = (int*)kiArenaMalloc(KI_ARENA_FARMER, sizeof(int) * ki_domain_size);
     KI_File_read(fh, &nParts, 1, MPI_INT, &status, &elements);
-    assert(elements = 1);
-    
+    assert(elements == 1);
+
     if (nParts != ki_domain_size) {
       fprintf(stderr, "Number of parts in .store file does not match domain size (old = %d vs now = %d).\nRestore failed.\n", nParts, ki_domain_size);
       KI_File_close(&fh);
       kiAbort(-1);
     }
     KI_File_read(fh, displs, ki_domain_size, MPI_INT, &status, &elements);
-    assert(elements = ki_domain_size);
+    assert(elements == ki_domain_size);
   }
 
   int displ;
   KI_Scatter(displs, 1, MPI_INT, &displ, 1, MPI_INT, 0, ki_cmm_domain);
   kipmsg(3, "Restoring: displ = %d\n", displ);
-  
+
   if (!KI_USE_ARENA) {
     if (kiIsDomainRoot()) {
       kifree(displs, (sizeof(int) * ki_domain_size));
@@ -3647,13 +3647,13 @@ long long kiRestoreState(char* filePrefix) {
   KI_File_seek(fh, displ, MPI_SEEK_SET);
   KI_File_read(fh, &nSeq, 1, MPI_INT, &status, &elements);
   assert(elements = 1);
-  
+
   if (nSeq != ki_seqs->nSeq) {
     fprintf(stderr, "Mismatch in number of sequences (old = %d vs now = %d).\nRestore failed.\n", nSeq, ki_seqs->nSeq);
     KI_File_close(&fh);
     kiAbort(-1);
   }
-  
+
 
   int nToRead;
   int i = 0, nLeft = nSeq;      /* in bits */
@@ -3676,22 +3676,22 @@ long long kiRestoreState(char* filePrefix) {
   long long nProcessed;
   long long nLocal = ki_nseq_processed;
   KI_Reduce(&nLocal, &nProcessed, 1, MPI_LONG_LONG, MPI_SUM, 0, ki_cmm_domain);
-  
+
   /* stateToTxtFile("txt.restore"); */
   return nProcessed;
-  
+
 }
 
 long long kiStoreStateToSeparateFiles(char* filePrefix) {
-  char filename[KI_NAME_BUF_SIZE];  
-  
+  char filename[KI_NAME_BUF_SIZE];
+
   sprintf(filename, "store.%d", ki_domain_rank);
   FILE* fp = fopen(filename, "wb");
   /* KI_File* fp = NULL; */
   /* KI_File_open(filename, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, fp); */
   fwrite(&(ki_seqs->nSeq), sizeof(int), 1, fp);
   memset(ki_tmp_buf, 0, KI_BUF_SIZE);
-  
+
   int i;
   int bit;
   char* p = ki_tmp_buf;
@@ -3706,10 +3706,10 @@ long long kiStoreStateToSeparateFiles(char* filePrefix) {
     /* fprintf(fp, "%d ", ); */
   }
   kipm("p-start = %d\n",(p-ki_tmp_buf));
-  
+
   fwrite(ki_tmp_buf, 1, (p-ki_tmp_buf+1), fp);
   fclose(fp);
-  
+
   /* KI_File_close(fp); */
 
   stateToTxtFile("txt.store");
@@ -3718,9 +3718,9 @@ long long kiStoreStateToSeparateFiles(char* filePrefix) {
 }
 
 long long kiRestoreStateFromSeparateFiles(char* filePrefix) {
-  char filename[KI_NAME_BUF_SIZE];  
+  char filename[KI_NAME_BUF_SIZE];
   FILE* fp;
-  
+
   sprintf(filename, "store.%d", ki_domain_rank);
   fp = fopen(filename, "rb");
   if (fp == NULL) return 0;
@@ -3729,7 +3729,7 @@ long long kiRestoreStateFromSeparateFiles(char* filePrefix) {
   int nRead, nToRead;
   nRead = fread(&nSeq, sizeof(int), 1, fp);
   assert(nRead == 1);
-  
+
   int i = 0, nLeft = nSeq;
   char* p;
   int bit;
@@ -3740,14 +3740,14 @@ long long kiRestoreStateFromSeparateFiles(char* filePrefix) {
     kipm("nRead = %d, nToRead = %d\n", nRead, nToRead);
     assert(nRead == nToRead);
     nLeft -= nRead * 8;
-    
+
     for (p = ki_tmp_buf; i < nSeq; ++i) {
       bit = (*p >> (7 - i % 8)) & 1;
       ki_seqs->flags[i] = bit ? KI_SEQ_USED : KI_SEQ_NEW;
       if ((i+1) % 8 == 0) ++p;
     }
   }
-  
+
   stateToTxtFile("txt.restore");
   return 0;
 }
