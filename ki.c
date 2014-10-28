@@ -2315,7 +2315,7 @@ bool kiIsFastq(char* fileName) {
   if (kiIsDomainRoot()) {
     FILE* fp = fopen(fileName, "r");
     if (fp == NULL) {
-      fprintf(stderr, "Could not open trainning input file %s.\n", fileName);
+      fprintf(stderr, "Could not open input file %s.\n", fileName);
       kiAbort(1);
     }
     char buf[KI_NAME_BUF_SIZE] = "";
