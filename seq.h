@@ -27,6 +27,7 @@ int  kiBaseIndex(char c);
 float kiSeqCmp(char* s1, char* s2); /* returns percent of discrepancy */
 float kiSeqNCmp(char* s1, char* s2, int n);
 float kiSeqNCmpX(char* s1, char* s2, int n, /*OUT*/int* iDiff);
+bool kiSeqNIdent(char* s1, char* s2, int n);
 bool kiIsProtein(char* s);
 void kiDna2Protein(char* dna, char* aa, int frame);
 float kiCalcGCContent(char* dna); /* in percentage */

@@ -168,6 +168,18 @@ float kiSeqNCmpX(char* s1, char* s2, int n, /*OUT*/int* iDiff) {
   return (1.0 * nDiff/len);
 }
 
+bool kiSeqNIdent(char* s1, char* s2, int n) {
+  assert(s1 && s2);
+  int len = 0;
+  char *p, *q;
+  for (p = s1, q = s2; *p != '\0' && *q != '\0' && len < n; ++p, ++q) {
+    if (*p != *q) return false;
+    ++len;
+  }
+  if (len < n) return false;
+  return true;
+}
+
 bool kiIsProtein(char* s) {
   for (; *s; ++s) {
     if (*s == 'B' ||

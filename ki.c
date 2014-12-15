@@ -960,10 +960,44 @@ void kiUserCountKmers(char* kmerFile, /*OUT*/long long* nHits) {
 
 
 int  kiFarmerCountKmers() {
+  char kmerFile[200];
+  KI_FARMER_UNPACK(KI_STRING, kmerFile);
+  
+  int startingIndex = ki_seqs->nSeq;
+  int nKmers = kiReadFastaShared(kmerFile, ki_seqs);
+
   long long nHits;
   long long totalHits;
+  float diff;
+  char rc[KI_SEQ_BUF_SIZE];
   
-  nHits = 1;
+  nHits = 0;
+
+  char* queries[2];  
+  char* query;  
+  char* subject;
+  int i, j, x, y, len;
+  for (i = startingIndex; i < startingIndex + nKmers; ++i) {
+    query = ki_seqs->seqs[i];
+    len = strlen(query);
+    kiReverseComplementSeqN(ki_seqs->seqs[i], len, rc);
+    queries[0] = query;
+    queries[1] = rc;
+    for (y = 0; y < 2; ++y) {
+      query = queries[y];
+      for (j = 0; j < startingIndex; ++j) {
+        subject = ki_seqs->seqs[j];
+        int slen = strlen(subject);
+        for (x = 0; x + len <= slen; ++x) {
+          if (kiSeqNIdent(query, subject + x, len)) ++nHits;
+          pmsg(3, "i=%d, j=%d, x=%d\n", i, j, x);
+          pmsg(3, "q=%s\ns=%s\n", query, subject + x);
+          pmsg(3, "nHits=%d\n", nHits);
+        }
+      }
+    }
+  }
+  
   kipm("Local hits = %lld\n", nHits);
   
   KI_Allreduce(&nHits, &totalHits, 1, MPI_LONG_LONG_INT, MPI_SUM,  ki_cmm_domain);
@@ -2283,7 +2317,8 @@ int kiReadFastaString(char* buf, alignment_t* seqs) {
     }
 
     /* handles multiline fasta */
-    for (q = readBuf, qq++; *qq != '\0' && *qq != '>'; ++qq) {
+    /* for (q = readBuf, qq++; *qq != '\0' && *qq != '>'; ++qq) { */
+    for (q = readBuf; *qq != '\0' && *qq != '>'; ++qq) {
       if (*qq != '\r' && *qq != '\n' && *qq != '\t' && *qq != ' ' && *qq != '\0') {
         *(q++) = *qq;
       }
