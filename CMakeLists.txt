@@ -95,6 +95,7 @@ add_executable(demo   ${CORE_SRC} ./demo.c)
 add_executable(search ${CORE_SRC} ./search.c)
 add_executable(rai    ${CORE_SRC} ./rai.c)
 add_executable(rait   ${CORE_SRC} ./rait.c)
+add_executable(kc     ${CORE_SRC} ./kc.c)
 
 
 #if (${CMAKE_SYSTEM} MATCHES "ppc")
@@ -108,3 +109,5 @@ target_link_libraries(demo   ${M_LIB})
 target_link_libraries(search ${M_LIB})
 target_link_libraries(rai    ${M_LIB})
 target_link_libraries(rait   ${M_LIB})
+target_link_libraries(kc     ${M_LIB})
+
