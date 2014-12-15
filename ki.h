@@ -30,6 +30,7 @@
 #define KI_CMD_STORE_STATE          18
 #define KI_CMD_RESTORE_STATE        19
 #define KI_CMD_SET_TERMINATION      20
+#define KI_CMD_COUNT_KMERS          21
 #define KI_CMD_TEST_ARGS            99
 
 
@@ -104,6 +105,9 @@ int  kiFarmerGetPrefixSeqs();
 
 void kiUserSearchProfile(char* profileName, float cutoff, /*OUT*/alignment_t* hits);
 int  kiFarmerSearchProfile();
+
+void kiUserCountKmers(char* kmerFile, /*OUT*/long long* nHits);
+int  kiFarmerCountKmers();
 
 void kiUserRAIphyOriginal(char* dbName, char* binName);
 int  kiFarmerRAIphyOriginal();

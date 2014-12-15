@@ -127,6 +127,7 @@ void kiRegisterCommands() {
   kiRegisterCommand(KI_CMD_STORE_STATE,          kiFarmerStoreState);
   kiRegisterCommand(KI_CMD_RESTORE_STATE,        kiFarmerRestoreState);
   kiRegisterCommand(KI_CMD_SET_TERMINATION,      kiFarmerSetTermination);
+  kiRegisterCommand(KI_CMD_COUNT_KMERS,          kiFarmerCountKmers);
 }
 
 /* Demo function: packing and unpacking args */
@@ -947,6 +948,26 @@ int  kiFarmerRestoreState() {
   nProcessed = kiRestoreState(filePrefix);
 
   KI_FARMER_PACK(KI_LONG_LONG, &nProcessed);
+}
+
+/* Kmer counting */
+void kiUserCountKmers(char* kmerFile, /*OUT*/long long* nHits) {
+  KI_PACK_SEND_CMD(KI_CMD_COUNT_KMERS,
+                   KI_STRING, kmerFile);
+    
+  KI_RECV_UNPACK_CMD(KI_LONG_LONG, nHits);
+}
+
+
+int  kiFarmerCountKmers() {
+  long long nHits;
+  long long totalHits;
+  
+  nHits = 1;
+  kipm("Local hits = %lld\n", nHits);
+  
+  KI_Allreduce(&nHits, &totalHits, 1, MPI_LONG_LONG_INT, MPI_SUM,  ki_cmm_domain);
+  KI_FARMER_PACK(KI_LONG_LONG, &totalHits);
 }
 
 
